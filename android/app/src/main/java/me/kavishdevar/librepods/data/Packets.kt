@@ -33,6 +33,7 @@ enum class Enums(val value: ByteArray) {
 }
 
 object BatteryComponent {
+    const val HEADSET = 1
     const val LEFT = 4
     const val RIGHT = 2
     const val CASE = 8
@@ -154,23 +155,12 @@ class AirPodsNotifications {
     }
 
     class BatteryNotification {
+        private val notificationPrefix = byteArrayOf(0x04, 0x00, 0x04, 0x00, 0x04, 0x00)
         private var first: Battery = Battery(BatteryComponent.LEFT, 0, BatteryStatus.DISCONNECTED)
         private var second: Battery = Battery(BatteryComponent.RIGHT, 0, BatteryStatus.DISCONNECTED)
         private var case: Battery = Battery(BatteryComponent.CASE, 0, BatteryStatus.DISCONNECTED)
 
-        fun isBatteryData(data: ByteArray): Boolean {
-            if (data.joinToString("") { "%02x".format(it) }.startsWith("040004000400")) {
-                Log.d("BatteryNotification", "Battery data starts with 040004000400. Most likely is a battery packet.")
-            } else {
-                return false
-            }
-            if (data.size != 22) {
-                Log.d("BatteryNotification", "Battery data size is not 22, probably being used with Airpods with fewer or more battery count.")
-                return false
-            }
-            Log.d("BatteryNotification", data.joinToString("") { "%02x".format(it) }.startsWith("040004000400").toString())
-            return data.joinToString("") { "%02x".format(it) }.startsWith("040004000400")
-        }
+        fun isBatteryData(data: ByteArray): Boolean = parseBatteryData(data) != null
 
         fun setBatteryDirect(
             leftLevel: Int,
@@ -186,34 +176,32 @@ class AirPodsNotifications {
         }
 
         fun setBattery(data: ByteArray) {
-            if (data.size != 22) {
+            val batteries = parseBatteryData(data) ?: return
+            batteries.find { it.component == BatteryComponent.HEADSET }?.let {
+                first = it.copy(component = BatteryComponent.LEFT)
+                second = it.copy(component = BatteryComponent.RIGHT)
+                case = Battery(BatteryComponent.CASE, 0, BatteryStatus.DISCONNECTED)
                 return
             }
-//            first = if (data[10].toInt() == BatteryStatus.DISCONNECTED) {
-//                Battery(first.component, first.level, data[10].toInt())
-//            } else {
-//                Battery(data[7].toInt(), data[9].toInt(), data[10].toInt())
-//            }
-//            second = if (data[15].toInt() == BatteryStatus.DISCONNECTED) {
-//                Battery(second.component, second.level, data[15].toInt())
-//            } else {
-//                Battery(data[12].toInt(), data[14].toInt(), data[15].toInt())
-//            }
-//            case = if (data[20].toInt() == BatteryStatus.DISCONNECTED && case.status != BatteryStatus.DISCONNECTED) {
-//                Battery(case.component, case.level, data[20].toInt())
-//            } else {
-//                Battery(data[17].toInt(), data[19].toInt(), data[20].toInt())
-//            }
-//            sometimes it shows battery as -1%, just skip all that and set it normally
-            first = Battery(
-                data[7].toInt(), data[9].toInt(), data[10].toInt()
-            )
-            second = Battery(
-                data[12].toInt(), data[14].toInt(), data[15].toInt()
-            )
-            case = Battery(
-                data[17].toInt(), data[19].toInt(), data[20].toInt()
-            )
+            batteries.find { it.component == BatteryComponent.LEFT }?.let { first = it }
+            batteries.find { it.component == BatteryComponent.RIGHT }?.let { second = it }
+            batteries.find { it.component == BatteryComponent.CASE }?.let { case = it }
+        }
+
+        private fun parseBatteryData(data: ByteArray): List<Battery>? {
+            if (data.size < 7 || !data.copyOfRange(0, 6).contentEquals(notificationPrefix)) return null
+            val count = data[6].toInt() and 0xFF
+            if (count !in 1..3 || data.size != 7 + 5 * count) return null
+
+            return List(count) { index ->
+                val offset = 7 + 5 * index
+                if (data[offset + 1] != 0x01.toByte() || data[offset + 4] != 0x01.toByte()) return null
+                Battery(
+                    component = data[offset].toInt() and 0xFF,
+                    level = data[offset + 2].toInt() and 0xFF,
+                    status = data[offset + 3].toInt() and 0xFF
+                )
+            }
         }
 
         fun getBattery(): List<Battery> {

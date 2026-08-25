@@ -29,7 +29,7 @@ open class AirPodsBase(
     val budsRes: Int,
     val leftBudsRes: Int,
     val rightBudsRes: Int,
-    val caseRes: Int,
+    val caseRes: Int?,
     val capabilities: Set<Capability>
 )
 enum class Capability {
@@ -138,6 +138,37 @@ class AirPods4ANC: AirPodsBase(
         Capability.SLEEP_DETECTION,
         Capability.ADAPTIVE_VOLUME,
         Capability.STEM_CONFIG
+    )
+)
+
+class AirPodsMax1: AirPodsBase(
+    modelNumber = listOf("A2096", "A3184"),
+    name = "AirPods Max 1",
+    displayName = "AirPods Max 1",
+    budCaseRes = R.drawable.airpods_max,
+    budsRes = R.drawable.airpods_max,
+    leftBudsRes = R.drawable.airpods_max,
+    rightBudsRes = R.drawable.airpods_max,
+    caseRes = null,
+    capabilities = setOf(Capability.LISTENING_MODE)
+)
+
+class AirPodsMax2: AirPodsBase(
+    modelNumber = listOf("A3454"),
+    name = "AirPods Max 2",
+    displayName = "AirPods Max 2",
+    budCaseRes = R.drawable.airpods_max,
+    budsRes = R.drawable.airpods_max,
+    leftBudsRes = R.drawable.airpods_max,
+    rightBudsRes = R.drawable.airpods_max,
+    caseRes = null,
+    capabilities = setOf(
+        Capability.LISTENING_MODE,
+        Capability.CONVERSATION_AWARENESS,
+        Capability.HEAD_GESTURES,
+        Capability.LOUD_SOUND_REDUCTION,
+        Capability.ADAPTIVE_AUDIO,
+        Capability.ADAPTIVE_VOLUME
     )
 )
 
@@ -265,6 +296,8 @@ object AirPodsModels {
         AirPods3(),
         AirPods4(),
         AirPods4ANC(),
+        AirPodsMax1(),
+        AirPodsMax2(),
         AirPodsPro1(),
         AirPodsPro2Lightning(),
         AirPodsPro2USBC(),

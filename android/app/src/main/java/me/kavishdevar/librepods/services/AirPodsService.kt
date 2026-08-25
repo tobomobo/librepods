@@ -880,7 +880,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                     )
                 }
 
-                if (batteryNotification.getBattery()[0].status == BatteryStatus.CHARGING && batteryNotification.getBattery()[1].status == BatteryStatus.CHARGING) {
+                if (batteryInfo.size == 22 && batteryNotification.getBattery()[0].status == BatteryStatus.CHARGING && batteryNotification.getBattery()[1].status == BatteryStatus.CHARGING) {
                     disconnectAudio(this@AirPodsService, device)
                 } else {
                     connectAudio(this@AirPodsService, device)
@@ -2344,11 +2344,13 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                     device,
                     device.METADATA_DEVICE_TYPE,
                     device.DEVICE_TYPE_UNTETHERED_HEADSET.toByteArray()
-                ) && SystemApisUtils.setMetadata(
-                    device,
-                    device.METADATA_UNTETHERED_CASE_ICON,
-                    resToUri(instance.model.caseRes).toString().toByteArray()
-                ) && SystemApisUtils.setMetadata(
+                ) && (instance.model.caseRes?.let {
+                    SystemApisUtils.setMetadata(
+                        device,
+                        device.METADATA_UNTETHERED_CASE_ICON,
+                        resToUri(it).toString().toByteArray()
+                    )
+                } ?: true) && SystemApisUtils.setMetadata(
                     device,
                     device.METADATA_UNTETHERED_RIGHT_ICON,
                     resToUri(instance.model.rightBudsRes).toString().toByteArray()

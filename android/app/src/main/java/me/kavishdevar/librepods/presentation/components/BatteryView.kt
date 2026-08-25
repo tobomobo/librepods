@@ -54,7 +54,7 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 fun BatteryView(
     batteryList: List<Battery>,
     budsRes: Int,
-    caseRes: Int
+    caseRes: Int?
 ) {
     val left = batteryList.find { it.component == BatteryComponent.LEFT }
     val right = batteryList.find { it.component == BatteryComponent.RIGHT }
@@ -125,24 +125,26 @@ fun BatteryView(
                 }
             }
 
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Image(
-                    bitmap = ImageBitmap.imageResource(caseRes),
-                    contentDescription = stringResource(R.string.case_alt),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                )
-
-                if (caseLevel > 0 || case?.status != BatteryStatus.DISCONNECTED) {
-                    BatteryIndicator(
-                        caseLevel,
-                        case?.status ?: BatteryStatus.NOT_CHARGING,
-                        prefix = if (!singleDisplayed.value) "\uDBC3\uDE6C" else ""
+            caseRes?.let {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        bitmap = ImageBitmap.imageResource(it),
+                        contentDescription = stringResource(R.string.case_alt),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
                     )
+
+                    if (caseLevel > 0 || case?.status != BatteryStatus.DISCONNECTED) {
+                        BatteryIndicator(
+                            caseLevel,
+                            case?.status ?: BatteryStatus.NOT_CHARGING,
+                            prefix = if (!singleDisplayed.value) "\uDBC3\uDE6C" else ""
+                        )
+                    }
                 }
             }
         }
