@@ -37,21 +37,23 @@ fun AboutCard(
     version: String?,
     navigateToVersion: () -> Unit
 ) {
-    val serialNumbers = when (LocalDesignSystem.current) {
-        DesignSystem.Apple -> listOf(
-            serialNumbers[0],
-            "􀀛 ${serialNumbers[1]}",
-            "􀀧 ${serialNumbers[2]}"
-        )
+    val displayedSerialNumbers = availableSerialNumbers(serialNumbers).map { (index, serialNumber) ->
+        when (LocalDesignSystem.current) {
+            DesignSystem.Apple -> when (index) {
+                1 -> "􀀛 $serialNumber"
+                2 -> "􀀧 $serialNumber"
+                else -> serialNumber
+            }
 
-        DesignSystem.Material -> listOf(
-            serialNumbers[0],
-            stringResource(R.string.left) + " " + serialNumbers[1],
-            stringResource(R.string.right) + " " + serialNumbers[2],
-        )
+            DesignSystem.Material -> when (index) {
+                1 -> "${stringResource(R.string.left)} $serialNumber"
+                2 -> "${stringResource(R.string.right)} $serialNumber"
+                else -> serialNumber
+            }
+        }
     }
 
-    val serialNumber = remember { mutableIntStateOf(0) }
+    val serialNumber = remember(displayedSerialNumbers) { mutableIntStateOf(0) }
 
     StyledList (title = stringResource(R.string.about)) {
         StyledListItem(
@@ -66,8 +68,10 @@ fun AboutCard(
 
         StyledListItem (
             name = stringResource(R.string.serial_number),
-            description = serialNumbers[serialNumber.intValue],
-            onClick = { serialNumber.intValue = (serialNumber.intValue + 1) % serialNumbers.size }
+            description = displayedSerialNumbers.getOrNull(serialNumber.intValue),
+            onClick = if (displayedSerialNumbers.size > 1) {
+                { serialNumber.intValue = (serialNumber.intValue + 1) % displayedSerialNumbers.size }
+            } else null
         )
 
         StyledListItem(
@@ -77,3 +81,10 @@ fun AboutCard(
         )
     }
 }
+
+internal fun availableSerialNumbers(serialNumbers: List<String>) =
+    serialNumbers.mapIndexedNotNull { index, serialNumber ->
+        (index to serialNumber).takeIf {
+            index == 0 || serialNumber.isNotBlank() && serialNumber != "0"
+        }
+    }
