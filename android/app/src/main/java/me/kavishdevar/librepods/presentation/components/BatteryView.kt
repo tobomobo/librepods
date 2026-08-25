@@ -38,7 +38,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.stringResource
@@ -54,7 +56,8 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 fun BatteryView(
     batteryList: List<Battery>,
     budsRes: Int,
-    caseRes: Int?
+    caseRes: Int?,
+    deviceColor: String? = null
 ) {
     val left = batteryList.find { it.component == BatteryComponent.LEFT }
     val right = batteryList.find { it.component == BatteryComponent.RIGHT }
@@ -81,6 +84,11 @@ fun BatteryView(
                 Image(
                     bitmap = ImageBitmap.imageResource(budsRes),
                     contentDescription = stringResource(R.string.buds),
+                    colorFilter = if (caseRes == null) {
+                        airPodsMaxArtworkColor(deviceColor)?.let {
+                            ColorFilter.tint(it, BlendMode.Color)
+                        }
+                    } else null,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp)
@@ -149,6 +157,14 @@ fun BatteryView(
             }
         }
     }
+}
+
+private fun airPodsMaxArtworkColor(name: String?): Color? = when (name) {
+    "Space Gray" -> Color(0xFF66676B)
+    "Sky Blue" -> Color(0xFF93B7CA)
+    "Pink" -> Color(0xFFD5A2A7)
+    "Green" -> Color(0xFFA4B89D)
+    else -> null
 }
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)

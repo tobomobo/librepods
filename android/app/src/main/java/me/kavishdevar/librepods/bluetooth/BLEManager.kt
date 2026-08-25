@@ -61,8 +61,12 @@ class BLEManager(private val context: Context) {
         val connectionState: String = "Unknown"
     )
 
-    fun getMostRecentStatus(): AirPodsStatus? {
-        return deviceStatusMap.values.maxByOrNull { it.lastSeen }
+    fun getMostRecentStatus(model: String? = null): AirPodsStatus? {
+        return if (model == null) {
+            deviceStatusMap.values.maxByOrNull { it.lastSeen }
+        } else {
+            deviceStatusMap.values.filter { it.model == model }.maxByOrNull { it.lastSeen }
+        }
     }
 
     interface AirPodsStatusListener {
@@ -98,13 +102,6 @@ class BLEManager(private val context: Context) {
         0x0A20 to "AirPods Max 1",
         0x1F20 to "AirPods Max 1 (USB-C)",
         0x2D20 to "AirPods Max 2"
-    )
-
-    val colorNames = mapOf(
-        0x00 to "White", 0x01 to "Black", 0x02 to "Red", 0x03 to "Blue",
-        0x04 to "Pink", 0x05 to "Gray", 0x06 to "Silver", 0x07 to "Gold",
-        0x08 to "Rose Gold", 0x09 to "Space Gray", 0x0A to "Dark Blue",
-        0x0B to "Light Blue", 0x0C to "Yellow"
     )
 
     val connStates = mapOf(
@@ -344,7 +341,7 @@ class BLEManager(private val context: Context) {
 //        val flagsCase = data[7].toInt() and 0xFF
         val lid = data[8].toInt() and 0xFF
         val colorCode = data[9].toInt() and 0xFF
-        val color = colorNames[colorCode] ?: "Unknown (0x${colorCode.toString(16).padStart(2, '0')})"
+        val color = colorName(modelId, colorCode)
         val conn = connStates[data[10].toInt()] ?: "Unknown (${data[10].toInt()})"
 
         val primaryLeft = ((status shr 5) and 0x01) == 1
@@ -452,7 +449,7 @@ class BLEManager(private val context: Context) {
         val flagsCase = data[7].toInt() and 0xFF
         val lid = data[8].toInt() and 0xFF
         val colorCode = data[9].toInt() and 0xFF
-        val color = colorNames[colorCode] ?: "Unknown (0x${colorCode.toString(16).padStart(2, '0')})"
+        val color = colorName(modelId, colorCode)
         val conn = connStates[data[10].toInt()] ?: "Unknown (${data[10].toInt()})"
 
         val primaryLeft = ((status shr 5) and 0x01) == 1
@@ -510,6 +507,29 @@ class BLEManager(private val context: Context) {
     }
 
     companion object {
+        private val colorNames = mapOf(
+            0x00 to "White", 0x01 to "Black", 0x02 to "Red", 0x03 to "Blue",
+            0x04 to "Pink", 0x05 to "Gray", 0x06 to "Silver", 0x07 to "Gold",
+            0x08 to "Rose Gold", 0x09 to "Space Gray", 0x0A to "Dark Blue",
+            0x0B to "Light Blue", 0x0C to "Yellow"
+        )
+        private val airPodsMaxColorNames = mapOf(
+            0x00 to "Silver",
+            0x02 to "Pink",
+            0x03 to "Sky Blue",
+            0x0F to "Space Gray",
+            0x11 to "Green"
+        )
+
+        internal fun colorName(modelId: Int, colorCode: Int): String {
+            val name = if (modelId == 0x0A20) {
+                airPodsMaxColorNames[colorCode]
+            } else {
+                colorNames[colorCode]
+            }
+            return name ?: "Unknown (0x${colorCode.toString(16).padStart(2, '0')})"
+        }
+
         private const val TAG = "AirPodsBLE"
         private const val CLEANUP_INTERVAL_MS = 10000L
         private const val STALE_DEVICE_TIMEOUT_MS = 15000L

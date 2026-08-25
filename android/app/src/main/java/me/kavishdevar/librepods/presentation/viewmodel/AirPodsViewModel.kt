@@ -73,6 +73,7 @@ data class AirPodsUiState(
 
     val modelName: String = "",
     val actualModel: String = "",
+    val deviceColor: String = "",
     val serialNumbers: List<String> = emptyList(),
     val version1: String = "",
     val version2: String = "",
@@ -337,7 +338,10 @@ class AirPodsViewModel(
 
                     AirPodsNotifications.BATTERY_DATA -> {
                         _uiState.update {
-                            it.copy(battery = service.getBattery())
+                            it.copy(
+                                battery = service.getBattery(),
+                                deviceColor = loadDeviceColor(it.instance)
+                            )
                         }
                     }
 
@@ -612,6 +616,7 @@ class AirPodsViewModel(
                 instance = instance,
                 modelName = instance.model.displayName,
                 actualModel = instance.actualModelNumber,
+                deviceColor = loadDeviceColor(instance),
                 serialNumbers = listOf(
                     instance.serialNumber ?: "",
                     instance.leftSerialNumber ?: "",
@@ -622,6 +627,16 @@ class AirPodsViewModel(
                 version3 = instance.version3 ?: ""
             )
         }
+    }
+
+    private fun loadDeviceColor(instance: AirPodsInstance?): String {
+        val bleModel = when (instance?.actualModelNumber) {
+            "A2096" -> "AirPods Max 1"
+            "A3184" -> "AirPods Max 1 (USB-C)"
+            "A3454" -> "AirPods Max 2"
+            else -> return ""
+        }
+        return service.bleManager.getMostRecentStatus(bleModel)?.color.orEmpty()
     }
 
     fun reconnectFromSavedMac() {

@@ -33,6 +33,7 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 fun AboutCard(
     modelName: String,
     actualModel: String,
+    deviceColor: String,
     serialNumbers: List<String>,
     version: String?,
     navigateToVersion: () -> Unit
@@ -65,6 +66,13 @@ fun AboutCard(
             name = stringResource(R.string.model_number),
             description = actualModel
         )
+
+        if (deviceColor.isNotBlank()) {
+            StyledListItem(
+                name = stringResource(R.string.device_color),
+                description = deviceColor
+            )
+        }
 
         StyledListItem (
             name = stringResource(R.string.serial_number),

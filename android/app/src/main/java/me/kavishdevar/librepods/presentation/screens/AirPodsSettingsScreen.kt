@@ -312,7 +312,8 @@ fun AirPodsSettingsScreen(
                 BatteryView(
                     batteryList = state.battery,
                     budsRes = state.instance?.model?.budsRes ?: R.drawable.airpods_pro_2_buds,
-                    caseRes = state.instance?.model?.caseRes
+                    caseRes = state.instance?.model?.caseRes,
+                    deviceColor = state.deviceColor
                 )
             }
             item(key = "spacer_battery") {
@@ -579,6 +580,7 @@ fun AirPodsSettingsScreen(
                 AboutCard(
                     modelName = state.modelName,
                     actualModel = state.actualModel,
+                    deviceColor = state.deviceColor,
                     serialNumbers = state.serialNumbers,
                     version = state.version3,
                     navigateToVersion = navigateToVersion
