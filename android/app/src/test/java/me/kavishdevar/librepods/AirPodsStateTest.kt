@@ -2,6 +2,7 @@ package me.kavishdevar.librepods
 
 import me.kavishdevar.librepods.bluetooth.AACPManager
 import me.kavishdevar.librepods.bluetooth.AACPManager.Companion.ControlCommandIdentifiers
+import me.kavishdevar.librepods.bluetooth.BLEManager
 import me.kavishdevar.librepods.presentation.components.availableSerialNumbers
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -23,5 +24,11 @@ class AirPodsStateTest {
 
         assertEquals(1, manager.controlCommandStatusList.size)
         assertArrayEquals(byteArrayOf(0x01), manager.getControlCommandStatus(identifier)?.value)
+    }
+
+    @Test
+    fun resolvesAirPodsMaxColorsPerModel() {
+        assertEquals("Sky Blue", BLEManager.colorName(0x0A20, 0x03))
+        assertEquals("Blue", BLEManager.colorName(0x1420, 0x03))
     }
 }
