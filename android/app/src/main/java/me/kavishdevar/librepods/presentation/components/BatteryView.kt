@@ -160,6 +160,7 @@ fun BatteryView(
 }
 
 private fun airPodsMaxArtworkColor(name: String?): Color? = when (name) {
+    "Midnight" -> Color(0xFF283343)
     "Space Gray" -> Color(0xFF66676B)
     "Sky Blue" -> Color(0xFF93B7CA)
     "Pink" -> Color(0xFFD5A2A7)
