@@ -20,5 +20,7 @@ class BatteryNotificationTest {
         assertEquals(83, batteries[0].level)
         assertEquals(83, batteries[1].level)
         assertEquals(BatteryStatus.DISCONNECTED, batteries[2].status)
+        assertEquals(BatteryComponent.HEADSET, batteries[3].component)
+        assertEquals("83%", batteryNotificationText(batteries))
     }
 }

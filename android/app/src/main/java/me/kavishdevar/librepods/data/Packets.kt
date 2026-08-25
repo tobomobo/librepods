@@ -50,6 +50,7 @@ object BatteryStatus {
 data class Battery(val component: Int, val level: Int, val status: Int) : Parcelable {
     fun getComponentName(): String? {
         return when (component) {
+            BatteryComponent.HEADSET -> "HEADSET"
             BatteryComponent.LEFT -> "LEFT"
             BatteryComponent.RIGHT -> "RIGHT"
             BatteryComponent.CASE -> "CASE"
@@ -159,6 +160,7 @@ class AirPodsNotifications {
         private var first: Battery = Battery(BatteryComponent.LEFT, 0, BatteryStatus.DISCONNECTED)
         private var second: Battery = Battery(BatteryComponent.RIGHT, 0, BatteryStatus.DISCONNECTED)
         private var case: Battery = Battery(BatteryComponent.CASE, 0, BatteryStatus.DISCONNECTED)
+        private var headset: Battery? = null
 
         fun isBatteryData(data: ByteArray): Boolean = parseBatteryData(data) != null
 
@@ -170,6 +172,7 @@ class AirPodsNotifications {
             caseLevel: Int,
             caseCharging: Boolean
         ) {
+            headset = null
             first = Battery(BatteryComponent.LEFT, leftLevel, if (leftCharging) BatteryStatus.CHARGING else BatteryStatus.NOT_CHARGING)
             second = Battery(BatteryComponent.RIGHT, rightLevel, if (rightCharging) BatteryStatus.CHARGING else BatteryStatus.NOT_CHARGING)
             case = Battery(BatteryComponent.CASE, caseLevel, if (caseCharging) BatteryStatus.CHARGING else BatteryStatus.NOT_CHARGING)
@@ -178,11 +181,13 @@ class AirPodsNotifications {
         fun setBattery(data: ByteArray) {
             val batteries = parseBatteryData(data) ?: return
             batteries.find { it.component == BatteryComponent.HEADSET }?.let {
+                headset = it
                 first = it.copy(component = BatteryComponent.LEFT)
                 second = it.copy(component = BatteryComponent.RIGHT)
                 case = Battery(BatteryComponent.CASE, 0, BatteryStatus.DISCONNECTED)
                 return
             }
+            headset = null
             batteries.find { it.component == BatteryComponent.LEFT }?.let { first = it }
             batteries.find { it.component == BatteryComponent.RIGHT }?.let { second = it }
             batteries.find { it.component == BatteryComponent.CASE }?.let { case = it }
@@ -207,7 +212,7 @@ class AirPodsNotifications {
         fun getBattery(): List<Battery> {
             val left = if (first.component == BatteryComponent.LEFT) first else second
             val right = if (first.component == BatteryComponent.LEFT) second else first
-            return listOf(left, right, case)
+            return listOfNotNull(left, right, case, headset)
         }
     }
 
@@ -231,6 +236,21 @@ class AirPodsNotifications {
             status = data[9]
         }
     }
+}
+
+internal fun batteryNotificationText(batteries: List<Battery>?): String {
+    fun Battery.text(label: String? = null) = takeUnless {
+        it.status == BatteryStatus.DISCONNECTED
+    }?.let {
+        "${label?.let { "$it: " } ?: ""}${if (it.status == BatteryStatus.CHARGING) "⚡ " else ""}${it.level}%"
+    }
+
+    batteries?.find { it.component == BatteryComponent.HEADSET }?.text()?.let { return it }
+    return listOfNotNull(
+        batteries?.find { it.component == BatteryComponent.LEFT }?.text("L"),
+        batteries?.find { it.component == BatteryComponent.RIGHT }?.text("R"),
+        batteries?.find { it.component == BatteryComponent.CASE }?.text("Case")
+    ).joinToString("  ")
 }
 
 fun isHeadTrackingData(data: ByteArray): Boolean {
