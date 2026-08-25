@@ -219,6 +219,13 @@ class PopupWindow(
         val batteryRightText = mView.findViewById<TextView>(R.id.right_battery)
         val batteryCaseText = mView.findViewById<TextView>(R.id.case_battery)
 
+        batteryList.find { it.component == BatteryComponent.HEADSET }?.let {
+            batteryLeftText.text = ""
+            batteryRightText.text = if (it.status != BatteryStatus.DISCONNECTED) "${it.level}%" else ""
+            batteryCaseText.text = ""
+            return
+        }
+
         batteryLeftText.text = batteryList.find { it.component == BatteryComponent.LEFT }?.let {
             if (it.status != BatteryStatus.DISCONNECTED) {
                 "\uDBC3\uDC8E    ${it.level}%"
