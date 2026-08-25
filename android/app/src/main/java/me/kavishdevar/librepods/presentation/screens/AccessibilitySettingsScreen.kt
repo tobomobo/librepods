@@ -241,20 +241,22 @@ fun AccessibilitySettingsScreen(viewModel: AirPodsViewModel, navigateToPurchase:
             }
         }
 
-        StyledToggle(
-            title = stringResource(R.string.noise_control),
-            label = stringResource(R.string.noise_cancellation_single_airpod),
-            description = stringResource(R.string.noise_cancellation_single_airpod_description),
-            checked = state.controlStates[AACPManager.Companion.ControlCommandIdentifiers.ONE_BUD_ANC_MODE]?.getOrNull(
-                0
-            ) == 0x01.toByte(),
-            onCheckedChange = {
-                viewModel.setControlCommandBoolean(
-                    AACPManager.Companion.ControlCommandIdentifiers.ONE_BUD_ANC_MODE, it
-                )
-            },
-            enabled = state.isPremium
-        )
+        if (state.capabilities.contains(Capability.LISTENING_MODE) && state.instance?.model?.caseRes != null) {
+            StyledToggle(
+                title = stringResource(R.string.noise_control),
+                label = stringResource(R.string.noise_cancellation_single_airpod),
+                description = stringResource(R.string.noise_cancellation_single_airpod_description),
+                checked = state.controlStates[AACPManager.Companion.ControlCommandIdentifiers.ONE_BUD_ANC_MODE]?.getOrNull(
+                    0
+                ) == 0x01.toByte(),
+                onCheckedChange = {
+                    viewModel.setControlCommandBoolean(
+                        AACPManager.Companion.ControlCommandIdentifiers.ONE_BUD_ANC_MODE, it
+                    )
+                },
+                enabled = state.isPremium
+            )
+        }
 
         if (state.capabilities.contains(Capability.LOUD_SOUND_REDUCTION) && state.vendorIdHook) {
             StyledToggle(

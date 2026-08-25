@@ -1,0 +1,27 @@
+package me.kavishdevar.librepods
+
+import me.kavishdevar.librepods.bluetooth.AACPManager
+import me.kavishdevar.librepods.bluetooth.AACPManager.Companion.ControlCommandIdentifiers
+import me.kavishdevar.librepods.presentation.components.availableSerialNumbers
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class AirPodsStateTest {
+    @Test
+    fun omitsMissingBudSerialNumbers() {
+        assertEquals(listOf(0 to "H123"), availableSerialNumbers(listOf("H123", "0", "0")))
+    }
+
+    @Test
+    fun keepsOnlyLatestControlState() {
+        val manager = AACPManager()
+        val identifier = ControlCommandIdentifiers.ADAPTIVE_VOLUME_CONFIG
+
+        manager.setControlCommandStatusValue(identifier, byteArrayOf(0x02))
+        manager.setControlCommandStatusValue(identifier, byteArrayOf(0x01))
+
+        assertEquals(1, manager.controlCommandStatusList.size)
+        assertArrayEquals(byteArrayOf(0x01), manager.getControlCommandStatus(identifier)?.value)
+    }
+}
