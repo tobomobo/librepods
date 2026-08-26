@@ -38,7 +38,7 @@ class AirPodsStateTest {
     @Test
     fun usesExactAirPodsMaxArtwork() {
         assertEquals(R.drawable.airpods_max, airPodsMaxArtworkRes("Silver", 0))
-        assertEquals(R.drawable.airpods_max_midnight, airPodsMaxArtworkRes("Midnight", 0))
+        assertEquals(R.drawable.airpods_max_spacegray, airPodsMaxArtworkRes("Midnight", 0))
         assertEquals(R.drawable.airpods_max_spacegray, airPodsMaxArtworkRes("Space Gray", 0))
         assertEquals(R.drawable.airpods_max_skyblue, airPodsMaxArtworkRes("Sky Blue", 0))
         assertEquals(R.drawable.airpods_max_pink, airPodsMaxArtworkRes("Pink", 0))
