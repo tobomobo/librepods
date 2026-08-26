@@ -52,6 +52,14 @@
         android:src="@raw/connected"
         tools:ignore="HardcodedText" />
 
+    <ImageView
+        android:id="@+id/artwork"
+        android:layout_width="match_parent"
+        android:layout_height="240dp"
+        android:contentDescription="@string/buds"
+        android:scaleType="fitCenter"
+        android:visibility="gone" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

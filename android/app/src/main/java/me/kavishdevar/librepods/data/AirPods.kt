@@ -47,6 +47,15 @@ enum class Capability {
     HRM
 }
 
+internal fun airPodsMaxArtworkRes(name: String?, fallback: Int): Int = when (name) {
+    "Silver" -> R.drawable.airpods_max
+    "Midnight", "Space Gray" -> R.drawable.airpods_max_spacegray
+    "Sky Blue" -> R.drawable.airpods_max_skyblue
+    "Pink" -> R.drawable.airpods_max_pink
+    "Green" -> R.drawable.airpods_max_green
+    else -> fallback
+}
+
 class AirPods: AirPodsBase(
     modelNumber = listOf("A1523", "A1722"),
     name = "AirPods 1",

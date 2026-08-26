@@ -101,6 +101,7 @@ import me.kavishdevar.librepods.data.Capability
 import me.kavishdevar.librepods.data.CustomEq
 import me.kavishdevar.librepods.data.StemAction
 import me.kavishdevar.librepods.data.XposedRemotePrefProvider
+import me.kavishdevar.librepods.data.airPodsMaxArtworkRes
 import me.kavishdevar.librepods.data.isHeadTrackingData
 import me.kavishdevar.librepods.presentation.overlays.IslandType
 import me.kavishdevar.librepods.presentation.overlays.IslandWindow
@@ -114,7 +115,10 @@ import me.kavishdevar.librepods.utils.SystemApisUtils
 import me.kavishdevar.librepods.utils.SystemApisUtils.DEVICE_TYPE_UNTETHERED_HEADSET
 import me.kavishdevar.librepods.utils.SystemApisUtils.METADATA_COMPANION_APP
 import me.kavishdevar.librepods.utils.SystemApisUtils.METADATA_DEVICE_TYPE
+import me.kavishdevar.librepods.utils.SystemApisUtils.METADATA_MAIN_BATTERY
+import me.kavishdevar.librepods.utils.SystemApisUtils.METADATA_MAIN_CHARGING
 import me.kavishdevar.librepods.utils.SystemApisUtils.METADATA_MAIN_ICON
+import me.kavishdevar.librepods.utils.SystemApisUtils.METADATA_MAIN_LOW_BATTERY_THRESHOLD
 import me.kavishdevar.librepods.utils.SystemApisUtils.METADATA_MANUFACTURER_NAME
 import me.kavishdevar.librepods.utils.SystemApisUtils.METADATA_MODEL_NAME
 import me.kavishdevar.librepods.utils.SystemApisUtils.METADATA_UNTETHERED_CASE_BATTERY
@@ -242,6 +246,28 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         }
     }
 
+    private fun setBleBattery(status: BLEManager.AirPodsStatus): Boolean {
+        if (airpodsInstance?.model?.caseRes == null && !status.model.startsWith("AirPods Max")) {
+            return false
+        }
+        if (status.model.startsWith("AirPods Max")) {
+            batteryNotification.setHeadsetBatteryDirect(
+                status.leftBattery ?: status.rightBattery,
+                status.isLeftCharging || status.isRightCharging
+            )
+        } else {
+            batteryNotification.setBatteryDirect(
+                leftLevel = status.leftBattery ?: 0,
+                leftCharging = status.isLeftCharging,
+                rightLevel = status.rightBattery ?: 0,
+                rightCharging = status.isRightCharging,
+                caseLevel = status.caseBattery ?: 0,
+                caseCharging = status.isCaseCharging
+            )
+        }
+        return true
+    }
+
     private val bleStatusListener = object : BLEManager.AirPodsStatusListener {
         @SuppressLint("NewApi")
         override fun onDeviceStatusChanged(
@@ -260,27 +286,16 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
             }
             Log.d(TAG, "Device status changed")
             if (BluetoothConnectionManager.aacpSocket?.isConnected == true) return
-            val leftLevel = bleManager.getMostRecentStatus()?.leftBattery ?: 0
-            val rightLevel = bleManager.getMostRecentStatus()?.rightBattery ?: 0
-            val caseLevel = bleManager.getMostRecentStatus()?.caseBattery ?: 0
-            val leftCharging = bleManager.getMostRecentStatus()?.isLeftCharging
-            val rightCharging = bleManager.getMostRecentStatus()?.isRightCharging
-            val caseCharging = bleManager.getMostRecentStatus()?.isCaseCharging
-
-            batteryNotification.setBatteryDirect(
-                leftLevel = leftLevel,
-                leftCharging = leftCharging == true,
-                rightLevel = rightLevel,
-                rightCharging = rightCharging == true,
-                caseLevel = caseLevel,
-                caseCharging = caseCharging == true
-            )
-            updateBattery()
+            if (setBleBattery(device)) updateBattery()
         }
 
         override fun onBroadcastFromNewAddress(device: BLEManager.AirPodsStatus) {
             Log.d(TAG, "New address detected")
-            sendBatteryBroadcast()
+            if (BluetoothConnectionManager.aacpSocket?.isConnected == true) {
+                sendBatteryBroadcast()
+            } else if (setBleBattery(device)) {
+                updateBattery()
+            }
         }
 
         override fun onLidStateChanged(
@@ -294,21 +309,6 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                         ?: "AirPods"
                 )
                 if (BluetoothConnectionManager.aacpSocket?.isConnected == true) return
-                val leftLevel = bleManager.getMostRecentStatus()?.leftBattery ?: 0
-                val rightLevel = bleManager.getMostRecentStatus()?.rightBattery ?: 0
-                val caseLevel = bleManager.getMostRecentStatus()?.caseBattery ?: 0
-                val leftCharging = bleManager.getMostRecentStatus()?.isLeftCharging
-                val rightCharging = bleManager.getMostRecentStatus()?.isRightCharging
-                val caseCharging = bleManager.getMostRecentStatus()?.isCaseCharging
-
-                batteryNotification.setBatteryDirect(
-                    leftLevel = leftLevel,
-                    leftCharging = leftCharging == true,
-                    rightLevel = rightLevel,
-                    rightCharging = rightCharging == true,
-                    caseLevel = caseLevel,
-                    caseCharging = caseCharging == true
-                )
                 sendBatteryBroadcast()
             } else {
                 Log.d(TAG, "Lid closed")
@@ -328,22 +328,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
 
         override fun onBatteryChanged(device: BLEManager.AirPodsStatus) {
             if (BluetoothConnectionManager.aacpSocket?.isConnected == true) return
-            val leftLevel = bleManager.getMostRecentStatus()?.leftBattery ?: 0
-            val rightLevel = bleManager.getMostRecentStatus()?.rightBattery ?: 0
-            val caseLevel = bleManager.getMostRecentStatus()?.caseBattery ?: 0
-            val leftCharging = bleManager.getMostRecentStatus()?.isLeftCharging
-            val rightCharging = bleManager.getMostRecentStatus()?.isRightCharging
-            val caseCharging = bleManager.getMostRecentStatus()?.isCaseCharging
-
-            batteryNotification.setBatteryDirect(
-                leftLevel = leftLevel,
-                leftCharging = leftCharging == true,
-                rightLevel = rightLevel,
-                rightCharging = rightCharging == true,
-                caseLevel = caseLevel,
-                caseCharging = caseCharging == true
-            )
-            updateBattery()
+            if (setBleBattery(device)) updateBattery()
             Log.d(TAG, "Battery changed")
         }
 
@@ -1670,7 +1655,10 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
             return
         }
         val popupWindow = PopupWindow(service.applicationContext)
-        popupWindow.open(name, batteryNotification)
+        val artworkRes = airpodsInstance?.model?.takeIf { it.caseRes == null }?.let {
+            airPodsMaxArtworkRes(bleManager.getMostRecentStatus("AirPods Max")?.color, it.budCaseRes)
+        }
+        popupWindow.open(name, batteryNotification, artworkRes)
         popupShown = true
     }
 
@@ -1847,6 +1835,19 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
 
     fun setBatteryMetadata() {
         if (checkSelfPermission("android.permission.BLUETOOTH_PRIVILEGED") != PackageManager.PERMISSION_GRANTED) {
+            batteryNotification.getBattery().find { it.component == BatteryComponent.HEADSET }?.let { headset ->
+                device?.let {
+                    SystemApisUtils.setMetadata(
+                        it, it.METADATA_MAIN_BATTERY, headset.level.toString().toByteArray()
+                    )
+                    SystemApisUtils.setMetadata(
+                        it,
+                        it.METADATA_MAIN_CHARGING,
+                        (if (headset.status == BatteryStatus.CHARGING) "1" else "0").toByteArray()
+                    )
+                }
+                return
+            }
             device?.let { it ->
                 SystemApisUtils.setMetadata(
                     it,
@@ -2313,48 +2314,65 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         d.let { device ->
             val instance = airpodsInstance
             if (instance != null) {
+                val caseRes = instance.model.caseRes
+                val isHeadset = caseRes == null
+                val mainIcon = if (isHeadset) {
+                    airPodsMaxArtworkRes(
+                        bleManager.getMostRecentStatus("AirPods Max")?.color,
+                        instance.model.budCaseRes
+                    )
+                } else {
+                    instance.model.budCaseRes
+                }
+                val componentMetadataSet = if (caseRes == null) {
+                    SystemApisUtils.setMetadata(
+                        device,
+                        device.METADATA_MAIN_LOW_BATTERY_THRESHOLD,
+                        "20".toByteArray()
+                    )
+                } else {
+                    SystemApisUtils.setMetadata(
+                        device,
+                        device.METADATA_UNTETHERED_CASE_ICON,
+                        resToUri(caseRes).toString().toByteArray()
+                    ) && SystemApisUtils.setMetadata(
+                        device,
+                        device.METADATA_UNTETHERED_RIGHT_ICON,
+                        resToUri(instance.model.rightBudsRes).toString().toByteArray()
+                    ) && SystemApisUtils.setMetadata(
+                        device,
+                        device.METADATA_UNTETHERED_LEFT_ICON,
+                        resToUri(instance.model.leftBudsRes).toString().toByteArray()
+                    ) && SystemApisUtils.setMetadata(
+                        device,
+                        device.METADATA_UNTETHERED_CASE_LOW_BATTERY_THRESHOLD,
+                        "20".toByteArray()
+                    ) && SystemApisUtils.setMetadata(
+                        device,
+                        device.METADATA_UNTETHERED_LEFT_LOW_BATTERY_THRESHOLD,
+                        "20".toByteArray()
+                    ) && SystemApisUtils.setMetadata(
+                        device,
+                        device.METADATA_UNTETHERED_RIGHT_LOW_BATTERY_THRESHOLD,
+                        "20".toByteArray()
+                    )
+                }
                 val metadataSet = SystemApisUtils.setMetadata(
                     device,
                     device.METADATA_MAIN_ICON,
-                    resToUri(instance.model.budCaseRes).toString().toByteArray()
+                    resToUri(mainIcon).toString().toByteArray()
                 ) && SystemApisUtils.setMetadata(
                     device, device.METADATA_MODEL_NAME, instance.model.name.toByteArray()
                 ) && SystemApisUtils.setMetadata(
                     device,
                     device.METADATA_DEVICE_TYPE,
                     device.DEVICE_TYPE_UNTETHERED_HEADSET.toByteArray()
-                ) && (instance.model.caseRes?.let {
-                    SystemApisUtils.setMetadata(
-                        device,
-                        device.METADATA_UNTETHERED_CASE_ICON,
-                        resToUri(it).toString().toByteArray()
-                    )
-                } ?: true) && SystemApisUtils.setMetadata(
-                    device,
-                    device.METADATA_UNTETHERED_RIGHT_ICON,
-                    resToUri(instance.model.rightBudsRes).toString().toByteArray()
-                ) && SystemApisUtils.setMetadata(
-                    device,
-                    device.METADATA_UNTETHERED_LEFT_ICON,
-                    resToUri(instance.model.leftBudsRes).toString().toByteArray()
-                ) && SystemApisUtils.setMetadata(
+                ) && componentMetadataSet && SystemApisUtils.setMetadata(
                     device,
                     device.METADATA_MANUFACTURER_NAME,
                     instance.model.manufacturer.toByteArray()
                 ) && SystemApisUtils.setMetadata(
                     device, device.METADATA_COMPANION_APP, "me.kavishdevar.librepods".toByteArray()
-                ) && SystemApisUtils.setMetadata(
-                    device,
-                    device.METADATA_UNTETHERED_CASE_LOW_BATTERY_THRESHOLD,
-                    "20".toByteArray()
-                ) && SystemApisUtils.setMetadata(
-                    device,
-                    device.METADATA_UNTETHERED_LEFT_LOW_BATTERY_THRESHOLD,
-                    "20".toByteArray()
-                ) && SystemApisUtils.setMetadata(
-                    device,
-                    device.METADATA_UNTETHERED_RIGHT_LOW_BATTERY_THRESHOLD,
-                    "20".toByteArray()
                 )
                 Log.d(TAG, "Metadata set: $metadataSet")
             } else {

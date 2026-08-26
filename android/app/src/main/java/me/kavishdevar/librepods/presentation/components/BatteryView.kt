@@ -48,6 +48,7 @@ import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.data.Battery
 import me.kavishdevar.librepods.data.BatteryComponent
 import me.kavishdevar.librepods.data.BatteryStatus
+import me.kavishdevar.librepods.data.airPodsMaxArtworkRes
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 @Composable
@@ -152,16 +153,6 @@ fun BatteryView(
             }
         }
     }
-}
-
-internal fun airPodsMaxArtworkRes(name: String?, fallback: Int): Int = when (name) {
-    "Silver" -> R.drawable.airpods_max
-    "Midnight" -> R.drawable.airpods_max_spacegray
-    "Space Gray" -> R.drawable.airpods_max_spacegray
-    "Sky Blue" -> R.drawable.airpods_max_skyblue
-    "Pink" -> R.drawable.airpods_max_pink
-    "Green" -> R.drawable.airpods_max_green
-    else -> fallback
 }
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)

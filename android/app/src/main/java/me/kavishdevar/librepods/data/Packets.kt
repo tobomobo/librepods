@@ -178,6 +178,20 @@ class AirPodsNotifications {
             case = Battery(BatteryComponent.CASE, caseLevel, if (caseCharging) BatteryStatus.CHARGING else BatteryStatus.NOT_CHARGING)
         }
 
+        fun setHeadsetBatteryDirect(level: Int?, charging: Boolean) {
+            val battery = Battery(
+                BatteryComponent.HEADSET,
+                level ?: 0,
+                if (level == null) BatteryStatus.DISCONNECTED
+                else if (charging) BatteryStatus.CHARGING
+                else BatteryStatus.NOT_CHARGING
+            )
+            headset = battery
+            first = battery.copy(component = BatteryComponent.LEFT)
+            second = battery.copy(component = BatteryComponent.RIGHT)
+            case = Battery(BatteryComponent.CASE, 0, BatteryStatus.DISCONNECTED)
+        }
+
         fun setBattery(data: ByteArray) {
             val batteries = parseBatteryData(data) ?: return
             batteries.find { it.component == BatteryComponent.HEADSET }?.let {
