@@ -156,7 +156,7 @@ fun BatteryView(
 
 internal fun airPodsMaxArtworkRes(name: String?, fallback: Int): Int = when (name) {
     "Silver" -> R.drawable.airpods_max
-    "Midnight" -> R.drawable.airpods_max_midnight
+    "Midnight" -> R.drawable.airpods_max_spacegray
     "Space Gray" -> R.drawable.airpods_max_spacegray
     "Sky Blue" -> R.drawable.airpods_max_skyblue
     "Pink" -> R.drawable.airpods_max_pink
