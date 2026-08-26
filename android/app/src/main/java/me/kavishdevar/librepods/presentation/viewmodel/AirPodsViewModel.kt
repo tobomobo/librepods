@@ -630,13 +630,8 @@ class AirPodsViewModel(
     }
 
     private fun loadDeviceColor(instance: AirPodsInstance?): String {
-        val bleModel = when (instance?.actualModelNumber) {
-            "A2096" -> "AirPods Max 1"
-            "A3184" -> "AirPods Max 1 (USB-C)"
-            "A3454" -> "AirPods Max 2"
-            else -> return ""
-        }
-        return service.bleManager.getMostRecentStatus(bleModel)?.color.orEmpty()
+        if (instance == null || instance.model.caseRes != null) return ""
+        return service.bleManager.getMostRecentStatus("AirPods Max")?.color.orEmpty()
     }
 
     fun reconnectFromSavedMac() {
