@@ -29,6 +29,7 @@ class AirPodsStateTest {
     @Test
     fun resolvesAirPodsMaxColorsPerModel() {
         assertEquals("Sky Blue", BLEManager.colorName(0x0A20, 0x03))
+        assertEquals("Midnight", BLEManager.colorName(0x1F20, 0x12))
         assertEquals("Midnight", BLEManager.colorName(0x2D20, 0x12))
         assertEquals("Blue", BLEManager.colorName(0x1420, 0x03))
     }
