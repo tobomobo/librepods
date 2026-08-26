@@ -211,20 +211,19 @@ class AACPManager {
         return controlCommandStatusList.find { it.identifier == identifier }
     }
 
-    private fun setControlCommandStatusValue(
+    internal fun setControlCommandStatusValue(
         identifier: ControlCommandIdentifiers, value: ByteArray
     ) {
         val existingStatus = getControlCommandStatus(identifier)
-        if (existingStatus?.value.contentEquals(value)) {
-            controlCommandStatusList.remove(existingStatus)
-        }
-        controlCommandListeners[identifier]?.forEach { listener ->
-            listener.onControlCommandReceived(ControlCommand(identifier.value, value))
-        }
+        if (existingStatus?.value.contentEquals(value) == true) return
+        existingStatus?.let(controlCommandStatusList::remove)
         controlCommandStatusList.add(ControlCommandStatus(identifier, value))
 
         if (identifier == ControlCommandIdentifiers.OWNS_CONNECTION) {
             owns = value.isNotEmpty() && value[0] == 0x01.toByte()
+        }
+        controlCommandListeners[identifier]?.forEach { listener ->
+            listener.onControlCommandReceived(ControlCommand(identifier.value, value))
         }
     }
 
@@ -456,17 +455,6 @@ class AACPManager {
 
                 val controlCommandIdentifier =
                     ControlCommandIdentifiers.fromByte(controlCommand.identifier)
-                if (controlCommandIdentifier != null) {
-                    controlCommandListeners[controlCommandIdentifier]?.forEach { listener ->
-                        Log.d(TAG, "calling listener for ${controlCommandIdentifier.name}")
-                        listener.onControlCommandReceived(controlCommand)
-                    }
-                } else {
-                    Log.w(
-                        TAG,
-                        "Unknown control command identifier: ${controlCommand.identifier.toHexString()}"
-                    )
-                }
 
                 if (controlCommandIdentifier == ControlCommandIdentifiers.OWNS_CONNECTION) {
                     callback?.onOwnershipChangeReceived(owns)

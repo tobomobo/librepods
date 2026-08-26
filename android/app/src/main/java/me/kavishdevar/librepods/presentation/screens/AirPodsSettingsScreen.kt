@@ -309,11 +309,14 @@ fun AirPodsSettingsScreen(
             }
 
             item(key = "battery") {
-                BatteryView(
-                    batteryList = state.battery,
-                    budsRes = state.instance?.model?.budsRes ?: R.drawable.airpods_pro_2_buds,
-                    caseRes = state.instance?.model?.caseRes ?: R.drawable.airpods_pro_2_case
-                )
+                state.instance?.model?.let { model ->
+                    BatteryView(
+                        batteryList = state.battery,
+                        budsRes = model.budsRes,
+                        caseRes = model.caseRes,
+                        deviceColor = state.deviceColor
+                    )
+                }
             }
             item(key = "spacer_battery") {
                 Spacer(modifier = Modifier.height(32.dp))
@@ -444,7 +447,7 @@ fun AirPodsSettingsScreen(
                 val loudSoundReductionCapability =
                     model.capabilities.contains(Capability.LOUD_SOUND_REDUCTION)
                 val adaptiveAudioCapability =
-                    model.capabilities.contains(Capability.ADAPTIVE_VOLUME)
+                    model.capabilities.contains(Capability.ADAPTIVE_AUDIO)
 
                 val adaptiveVolumeChecked =
                     state.controlStates[AACPManager.Companion.ControlCommandIdentifiers.ADAPTIVE_VOLUME_CONFIG]?.getOrNull(
@@ -576,12 +579,16 @@ fun AirPodsSettingsScreen(
 
             item(key = "spacer_about") { Spacer(modifier = Modifier.height(32.dp)) }
             item(key = "about") {
+                val hasCase = state.instance?.model?.caseRes != null
                 AboutCard(
                     modelName = state.modelName,
                     actualModel = state.actualModel,
+                    deviceColor = state.deviceColor,
                     serialNumbers = state.serialNumbers,
-                    version = state.version3,
-                    navigateToVersion = navigateToVersion
+                    version = if (hasCase) state.version3 else state.version1,
+                    navigateToVersion = if (hasCase) {
+                        navigateToVersion
+                    } else null
                 )
             }
 

@@ -52,57 +52,55 @@
         android:src="@raw/connected"
         tools:ignore="HardcodedText" />
 
+    <ImageView
+        android:id="@+id/artwork"
+        android:layout_width="match_parent"
+        android:layout_height="240dp"
+        android:contentDescription="@string/buds"
+        android:scaleType="fitCenter"
+        android:visibility="gone" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <!-- Left Half -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:textAlignment="center"
-                android:layout_marginTop="16dp"
-                android:fontFamily="@font/sf_pro"
-                android:text=""
-                android:textColor="@color/popup_text"
-                android:textSize="20sp"
-                android:id="@+id/left_battery"
-                android:gravity="center"
-                tools:ignore="NestedWeights" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:textAlignment="center"
-                android:layout_marginTop="16dp"
-                android:fontFamily="@font/sf_pro"
-                android:gravity="center"
-                android:text=""
-                android:id="@+id/right_battery"
-                android:textColor="@color/popup_text"
-                android:textSize="20sp" />
-        </LinearLayout>
-
-        <!-- Right Half -->
         <TextView
+            android:id="@+id/left_battery"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:textAlignment="center"
-            android:id="@+id/case_battery"
             android:layout_marginTop="16dp"
             android:fontFamily="@font/sf_pro"
             android:gravity="center"
             android:text=""
+            android:textAlignment="center"
+            android:textColor="@color/popup_text"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/right_battery"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginTop="16dp"
+            android:fontFamily="@font/sf_pro"
+            android:gravity="center"
+            android:text=""
+            android:textAlignment="center"
+            android:textColor="@color/popup_text"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/case_battery"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_marginTop="16dp"
+            android:fontFamily="@font/sf_pro"
+            android:gravity="center"
+            android:text=""
+            android:textAlignment="center"
             android:textColor="@color/popup_text"
             android:textSize="20sp" />
     </LinearLayout>

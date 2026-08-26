@@ -93,9 +93,6 @@ fun StyledScaffold(
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     content: @Composable () -> Unit
 ) {
-    val isDarkTheme = isSystemInDarkTheme()
-    val hazeState = rememberHazeState(blurEnabled = true)
-
     when (LocalDesignSystem.current) {
         DesignSystem.Material -> {
             Scaffold(
@@ -154,13 +151,14 @@ fun StyledScaffold(
                     modifier = modifier
                         .then(if (visible) Modifier.padding(paddingValues) else Modifier)
                         .fillMaxSize()
-                        .hazeSource(hazeState)
                 ) {
                     content()
                 }
             }
         }
         DesignSystem.Apple -> {
+            val isDarkTheme = isSystemInDarkTheme()
+            val hazeState = rememberHazeState(blurEnabled = true)
             Scaffold(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
                 snackbarHost = { SnackbarHost(snackbarHostState) },

@@ -119,8 +119,9 @@ These parts of the app were completely AI-generated:
 - Head Gestures - all of it, including logic and the UI
 - The offset setup with r2+the xposed module (both versions)
 - Troubleshooter and LogCollector
+- AirPods Max 1/2 Android support and its regression tests (OpenAI Codex, hardware-tested by @tobomobo)
 
-Rest everything- the background service, the Bluetooth manager classes (AACP and ATT), the entire UI, even the smallest components were written manually.
+Other than the items listed above, the background service, Bluetooth manager classes (AACP and ATT), UI, and its components were written manually.
 
 Some parts of the UI components were borrowed from [Kyant0's demo app](https://github.com/Kyant0/AndroidLiquidGlass/tree/master/catalog), which is licensed under [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
