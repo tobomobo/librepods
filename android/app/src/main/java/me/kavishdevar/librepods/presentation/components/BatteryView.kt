@@ -48,13 +48,15 @@ import me.kavishdevar.librepods.R
 import me.kavishdevar.librepods.data.Battery
 import me.kavishdevar.librepods.data.BatteryComponent
 import me.kavishdevar.librepods.data.BatteryStatus
+import me.kavishdevar.librepods.data.airPodsMaxArtworkRes
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 @Composable
 fun BatteryView(
     batteryList: List<Battery>,
     budsRes: Int,
-    caseRes: Int
+    caseRes: Int?,
+    deviceColor: String? = null
 ) {
     val left = batteryList.find { it.component == BatteryComponent.LEFT }
     val right = batteryList.find { it.component == BatteryComponent.RIGHT }
@@ -79,7 +81,9 @@ fun BatteryView(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Image(
-                    bitmap = ImageBitmap.imageResource(budsRes),
+                    bitmap = ImageBitmap.imageResource(
+                        if (caseRes == null) airPodsMaxArtworkRes(deviceColor, budsRes) else budsRes
+                    ),
                     contentDescription = stringResource(R.string.buds),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -125,24 +129,26 @@ fun BatteryView(
                 }
             }
 
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Image(
-                    bitmap = ImageBitmap.imageResource(caseRes),
-                    contentDescription = stringResource(R.string.case_alt),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                )
-
-                if (caseLevel > 0 || case?.status != BatteryStatus.DISCONNECTED) {
-                    BatteryIndicator(
-                        caseLevel,
-                        case?.status ?: BatteryStatus.NOT_CHARGING,
-                        prefix = if (!singleDisplayed.value) "\uDBC3\uDE6C" else ""
+            caseRes?.let {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        bitmap = ImageBitmap.imageResource(it),
+                        contentDescription = stringResource(R.string.case_alt),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
                     )
+
+                    if (caseLevel > 0 || case?.status != BatteryStatus.DISCONNECTED) {
+                        BatteryIndicator(
+                            caseLevel,
+                            case?.status ?: BatteryStatus.NOT_CHARGING,
+                            prefix = if (!singleDisplayed.value) "\uDBC3\uDE6C" else ""
+                        )
+                    }
                 }
             }
         }

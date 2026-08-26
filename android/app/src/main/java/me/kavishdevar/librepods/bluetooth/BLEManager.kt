@@ -61,8 +61,13 @@ class BLEManager(private val context: Context) {
         val connectionState: String = "Unknown"
     )
 
-    fun getMostRecentStatus(): AirPodsStatus? {
-        return deviceStatusMap.values.maxByOrNull { it.lastSeen }
+    fun getMostRecentStatus(modelPrefix: String? = null): AirPodsStatus? {
+        return if (modelPrefix == null) {
+            deviceStatusMap.values.maxByOrNull { it.lastSeen }
+        } else {
+            deviceStatusMap.values.filter { it.model.startsWith(modelPrefix) }
+                .maxByOrNull { it.lastSeen }
+        }
     }
 
     interface AirPodsStatusListener {
@@ -85,6 +90,7 @@ class BLEManager(private val context: Context) {
     private val processedAddresses = mutableSetOf<String>()
 
     private val lastValidCaseBatteryMap = mutableMapOf<String, Int>()
+    private val singleBatteryModelIds = setOf(0x0A20, 0x1F20, 0x2D20)
     private val modelNames = mapOf(
         0x0E20 to "AirPods Pro",
         0x1420 to "AirPods Pro 2",
@@ -94,15 +100,9 @@ class BLEManager(private val context: Context) {
         0x1320 to "AirPods 3",
         0x1920 to "AirPods 4",
         0x1B20 to "AirPods 4 (ANC)",
-        0x0A20 to "AirPods Max",
-        0x1F20 to "AirPods Max (USB-C)"
-    )
-
-    val colorNames = mapOf(
-        0x00 to "White", 0x01 to "Black", 0x02 to "Red", 0x03 to "Blue",
-        0x04 to "Pink", 0x05 to "Gray", 0x06 to "Silver", 0x07 to "Gold",
-        0x08 to "Rose Gold", 0x09 to "Space Gray", 0x0A to "Dark Blue",
-        0x0B to "Light Blue", 0x0C to "Yellow"
+        0x0A20 to "AirPods Max 1",
+        0x1F20 to "AirPods Max 1 (USB-C)",
+        0x2D20 to "AirPods Max 2"
     )
 
     val connStates = mapOf(
@@ -287,7 +287,7 @@ class BLEManager(private val context: Context) {
             airPodsStatusListener?.let { listener ->
                 if (previousStatus == null) {
                     listener.onBroadcastFromNewAddress(parsedStatus)
-                    Log.d(TAG, "New AirPods device detected: $address")
+                    Log.d(TAG, "New AirPods device detected: $address, model=${parsedStatus.model}, color=${parsedStatus.color}")
 
                     if (currentGlobalLidState == null || currentGlobalLidState != parsedStatus.lidOpen) {
                         currentGlobalLidState = parsedStatus.lidOpen
@@ -295,7 +295,7 @@ class BLEManager(private val context: Context) {
                         Log.d(TAG, "Lid state ${if (parsedStatus.lidOpen) "opened" else "closed"} (detected from new device)")
                     }
                 } else {
-                    if (parsedStatus != previousStatus) {
+                    if (hasMeaningfulStatusChange(previousStatus, parsedStatus)) {
                         listener.onDeviceStatusChanged(parsedStatus, previousStatus)
                     }
 
@@ -336,11 +336,13 @@ class BLEManager(private val context: Context) {
         val paired = data[2].toInt() == 1
         val modelId = ((data[3].toInt() and 0xFF) shl 8) or (data[4].toInt() and 0xFF)
         val model = modelNames[modelId] ?: "Unknown ($modelId)"
+        val singleBattery = modelId in singleBatteryModelIds
 
         val status = data[5].toInt() and 0xFF
 //        val flagsCase = data[7].toInt() and 0xFF
         val lid = data[8].toInt() and 0xFF
-        val color = colorNames[data[9].toInt()] ?: "Unknown"
+        val colorCode = data[9].toInt() and 0xFF
+        val color = colorName(modelId, colorCode)
         val conn = connStates[data[10].toInt()] ?: "Unknown (${data[10].toInt()})"
 
         val primaryLeft = ((status shr 5) and 0x01) == 1
@@ -360,8 +362,15 @@ class BLEManager(private val context: Context) {
 
         val rawCaseBatteryByte = decrypted[3].toInt() and 0xFF
         val (isCaseCharging, rawCaseBattery) = formatBattery(rawCaseBatteryByte)
+        val headsetBattery = if (singleBattery) {
+            listOf(
+                isLeftCharging to leftBattery,
+                isRightCharging to rightBattery,
+                isCaseCharging to rawCaseBattery
+            ).firstOrNull { it.second != 0x7F }
+        } else null
 
-        val caseBattery = if (rawCaseBatteryByte == 0xFF || (isCaseCharging && rawCaseBattery == 127)) {
+        val caseBattery = if (singleBattery) null else if (rawCaseBatteryByte == 0xFF || (isCaseCharging && rawCaseBattery == 127)) {
             lastValidCaseBatteryMap[address]
         } else {
             lastValidCaseBatteryMap[address] = rawCaseBattery
@@ -375,14 +384,14 @@ class BLEManager(private val context: Context) {
             lastSeen = System.currentTimeMillis(),
             paired = paired,
             model = model,
-            leftBattery = leftBattery,
-            rightBattery = rightBattery,
+            leftBattery = if (singleBattery) headsetBattery?.second else leftBattery,
+            rightBattery = if (singleBattery) headsetBattery?.second else rightBattery,
             caseBattery = caseBattery,
             isLeftInEar = isLeftInEar,
             isRightInEar = isRightInEar,
-            isLeftCharging = isLeftCharging,
-            isRightCharging = isRightCharging,
-            isCaseCharging = isCaseCharging,
+            isLeftCharging = if (singleBattery) headsetBattery?.first == true else isLeftCharging,
+            isRightCharging = if (singleBattery) headsetBattery?.first == true else isRightCharging,
+            isCaseCharging = !singleBattery && isCaseCharging,
             lidOpen = lidOpen,
             color = color,
             connectionState = conn
@@ -434,12 +443,14 @@ class BLEManager(private val context: Context) {
         val paired = data[2].toInt() == 1
         val modelId = ((data[3].toInt() and 0xFF) shl 8) or (data[4].toInt() and 0xFF)
         val model = modelNames[modelId] ?: "Unknown ($modelId)"
+        val singleBattery = modelId in singleBatteryModelIds
 
         val status = data[5].toInt() and 0xFF
         val podsBattery = data[6].toInt() and 0xFF
         val flagsCase = data[7].toInt() and 0xFF
         val lid = data[8].toInt() and 0xFF
-        val color = colorNames[data[9].toInt()] ?: "Unknown"
+        val colorCode = data[9].toInt() and 0xFF
+        val color = colorName(modelId, colorCode)
         val conn = connStates[data[10].toInt()] ?: "Unknown (${data[10].toInt()})"
 
         val primaryLeft = ((status shr 5) and 0x01) == 1
@@ -470,19 +481,26 @@ class BLEManager(private val context: Context) {
             else -> null
         }
 
+        val leftBattery = decodeBattery(leftBatteryNibble)
+        val rightBattery = decodeBattery(rightBatteryNibble)
+        val headsetBattery = if (singleBattery) {
+            listOf(leftBattery to isLeftCharging, rightBattery to isRightCharging)
+                .firstOrNull { it.first != null }
+        } else null
+
         return AirPodsStatus(
             address = address,
             lastSeen = System.currentTimeMillis(),
             paired = paired,
             model = model,
-            leftBattery = decodeBattery(leftBatteryNibble),
-            rightBattery = decodeBattery(rightBatteryNibble),
-            caseBattery = decodeBattery(caseBattery),
+            leftBattery = if (singleBattery) headsetBattery?.first else leftBattery,
+            rightBattery = if (singleBattery) headsetBattery?.first else rightBattery,
+            caseBattery = if (singleBattery) null else decodeBattery(caseBattery),
             isLeftInEar = isLeftInEar,
             isRightInEar = isRightInEar,
-            isLeftCharging = isLeftCharging,
-            isRightCharging = isRightCharging,
-            isCaseCharging = isCaseCharging,
+            isLeftCharging = if (singleBattery) headsetBattery?.second == true else isLeftCharging,
+            isRightCharging = if (singleBattery) headsetBattery?.second == true else isRightCharging,
+            isCaseCharging = !singleBattery && isCaseCharging,
             lidOpen = lidOpen,
             color = color,
             connectionState = conn
@@ -490,6 +508,36 @@ class BLEManager(private val context: Context) {
     }
 
     companion object {
+        private val colorNames = mapOf(
+            0x00 to "White", 0x01 to "Black", 0x02 to "Red", 0x03 to "Blue",
+            0x04 to "Pink", 0x05 to "Gray", 0x06 to "Silver", 0x07 to "Gold",
+            0x08 to "Rose Gold", 0x09 to "Space Gray", 0x0A to "Dark Blue",
+            0x0B to "Light Blue", 0x0C to "Yellow"
+        )
+        private val airPodsMaxColorNames = mapOf(
+            0x00 to "Silver",
+            0x02 to "Pink",
+            0x03 to "Sky Blue",
+            0x0F to "Space Gray",
+            0x11 to "Green"
+        )
+
+        internal fun colorName(modelId: Int, colorCode: Int): String {
+            val name = when (modelId) {
+                0x0A20 -> airPodsMaxColorNames[colorCode]
+                0x1F20, 0x2D20 -> if (colorCode == 0x12) {
+                    "Midnight"
+                } else {
+                    null
+                }
+                else -> colorNames[colorCode]
+            }
+            return name ?: "Unknown (0x${colorCode.toString(16).padStart(2, '0')})"
+        }
+
+        internal fun hasMeaningfulStatusChange(previous: AirPodsStatus, current: AirPodsStatus) =
+            current.copy(lastSeen = previous.lastSeen) != previous
+
         private const val TAG = "AirPodsBLE"
         private const val CLEANUP_INTERVAL_MS = 10000L
         private const val STALE_DEVICE_TIMEOUT_MS = 15000L
