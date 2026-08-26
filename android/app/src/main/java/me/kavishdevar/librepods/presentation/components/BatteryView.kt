@@ -38,9 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.stringResource
@@ -82,13 +80,10 @@ fun BatteryView(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Image(
-                    bitmap = ImageBitmap.imageResource(budsRes),
+                    bitmap = ImageBitmap.imageResource(
+                        if (caseRes == null) airPodsMaxArtworkRes(deviceColor, budsRes) else budsRes
+                    ),
                     contentDescription = stringResource(R.string.buds),
-                    colorFilter = if (caseRes == null) {
-                        airPodsMaxArtworkColor(deviceColor)?.let {
-                            ColorFilter.tint(it, BlendMode.Modulate)
-                        }
-                    } else null,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp)
@@ -159,13 +154,14 @@ fun BatteryView(
     }
 }
 
-private fun airPodsMaxArtworkColor(name: String?): Color? = when (name) {
-    "Midnight" -> Color(0xFF283343)
-    "Space Gray" -> Color(0xFF66676B)
-    "Sky Blue" -> Color(0xFF93B7CA)
-    "Pink" -> Color(0xFFD5A2A7)
-    "Green" -> Color(0xFFA4B89D)
-    else -> null
+internal fun airPodsMaxArtworkRes(name: String?, fallback: Int): Int = when (name) {
+    "Silver" -> R.drawable.airpods_max
+    "Midnight" -> R.drawable.airpods_max_midnight
+    "Space Gray" -> R.drawable.airpods_max_spacegray
+    "Sky Blue" -> R.drawable.airpods_max_skyblue
+    "Pink" -> R.drawable.airpods_max_pink
+    "Green" -> R.drawable.airpods_max_green
+    else -> fallback
 }
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
