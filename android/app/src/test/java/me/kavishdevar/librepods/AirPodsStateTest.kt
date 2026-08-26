@@ -32,4 +32,18 @@ class AirPodsStateTest {
         assertEquals("Midnight", BLEManager.colorName(0x2D20, 0x12))
         assertEquals("Blue", BLEManager.colorName(0x1420, 0x03))
     }
+
+    @Test
+    fun ignoresBleTimestampOnlyChanges() {
+        val status = BLEManager.AirPodsStatus(address = "00:00:00:00:00:00", lastSeen = 1)
+
+        assertEquals(
+            false,
+            BLEManager.hasMeaningfulStatusChange(status, status.copy(lastSeen = 2))
+        )
+        assertEquals(
+            true,
+            BLEManager.hasMeaningfulStatusChange(status, status.copy(color = "Midnight"))
+        )
+    }
 }
