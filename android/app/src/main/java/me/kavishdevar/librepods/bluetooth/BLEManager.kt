@@ -294,7 +294,7 @@ class BLEManager(private val context: Context) {
                         Log.d(TAG, "Lid state ${if (parsedStatus.lidOpen) "opened" else "closed"} (detected from new device)")
                     }
                 } else {
-                    if (parsedStatus != previousStatus) {
+                    if (hasMeaningfulStatusChange(previousStatus, parsedStatus)) {
                         listener.onDeviceStatusChanged(parsedStatus, previousStatus)
                     }
 
@@ -529,6 +529,9 @@ class BLEManager(private val context: Context) {
             }
             return name ?: "Unknown (0x${colorCode.toString(16).padStart(2, '0')})"
         }
+
+        internal fun hasMeaningfulStatusChange(previous: AirPodsStatus, current: AirPodsStatus) =
+            current.copy(lastSeen = previous.lastSeen) != previous
 
         private const val TAG = "AirPodsBLE"
         private const val CLEANUP_INTERVAL_MS = 10000L

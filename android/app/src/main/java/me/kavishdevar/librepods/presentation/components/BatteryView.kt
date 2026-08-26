@@ -86,7 +86,7 @@ fun BatteryView(
                     contentDescription = stringResource(R.string.buds),
                     colorFilter = if (caseRes == null) {
                         airPodsMaxArtworkColor(deviceColor)?.let {
-                            ColorFilter.tint(it, BlendMode.Color)
+                            ColorFilter.tint(it, BlendMode.Modulate)
                         }
                     } else null,
                     modifier = Modifier
