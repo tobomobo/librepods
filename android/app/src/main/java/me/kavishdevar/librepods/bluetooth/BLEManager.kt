@@ -524,7 +524,7 @@ class BLEManager(private val context: Context) {
         internal fun colorName(modelId: Int, colorCode: Int): String {
             val name = when (modelId) {
                 0x0A20 -> airPodsMaxColorNames[colorCode]
-                0x2D20 -> if (colorCode == 0x12) "Midnight" else null
+                0x1F20, 0x2D20 -> if (colorCode == 0x12) "Midnight" else null
                 else -> colorNames[colorCode]
             }
             return name ?: "Unknown (0x${colorCode.toString(16).padStart(2, '0')})"
