@@ -61,11 +61,12 @@ class BLEManager(private val context: Context) {
         val connectionState: String = "Unknown"
     )
 
-    fun getMostRecentStatus(model: String? = null): AirPodsStatus? {
-        return if (model == null) {
+    fun getMostRecentStatus(modelPrefix: String? = null): AirPodsStatus? {
+        return if (modelPrefix == null) {
             deviceStatusMap.values.maxByOrNull { it.lastSeen }
         } else {
-            deviceStatusMap.values.filter { it.model == model }.maxByOrNull { it.lastSeen }
+            deviceStatusMap.values.filter { it.model.startsWith(modelPrefix) }
+                .maxByOrNull { it.lastSeen }
         }
     }
 
