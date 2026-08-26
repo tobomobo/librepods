@@ -3,6 +3,7 @@ package me.kavishdevar.librepods
 import me.kavishdevar.librepods.bluetooth.AACPManager
 import me.kavishdevar.librepods.bluetooth.AACPManager.Companion.ControlCommandIdentifiers
 import me.kavishdevar.librepods.bluetooth.BLEManager
+import me.kavishdevar.librepods.presentation.components.airPodsMaxArtworkRes
 import me.kavishdevar.librepods.presentation.components.availableSerialNumbers
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -32,6 +33,17 @@ class AirPodsStateTest {
         assertEquals("Midnight", BLEManager.colorName(0x1F20, 0x12))
         assertEquals("Midnight", BLEManager.colorName(0x2D20, 0x12))
         assertEquals("Blue", BLEManager.colorName(0x1420, 0x03))
+    }
+
+    @Test
+    fun usesExactAirPodsMaxArtwork() {
+        assertEquals(R.drawable.airpods_max, airPodsMaxArtworkRes("Silver", 0))
+        assertEquals(R.drawable.airpods_max_midnight, airPodsMaxArtworkRes("Midnight", 0))
+        assertEquals(R.drawable.airpods_max_spacegray, airPodsMaxArtworkRes("Space Gray", 0))
+        assertEquals(R.drawable.airpods_max_skyblue, airPodsMaxArtworkRes("Sky Blue", 0))
+        assertEquals(R.drawable.airpods_max_pink, airPodsMaxArtworkRes("Pink", 0))
+        assertEquals(R.drawable.airpods_max_green, airPodsMaxArtworkRes("Green", 0))
+        assertEquals(123, airPodsMaxArtworkRes(null, 123))
     }
 
     @Test
