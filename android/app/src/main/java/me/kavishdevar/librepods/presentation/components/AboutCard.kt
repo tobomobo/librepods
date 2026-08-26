@@ -36,7 +36,7 @@ fun AboutCard(
     deviceColor: String,
     serialNumbers: List<String>,
     version: String?,
-    navigateToVersion: () -> Unit
+    navigateToVersion: (() -> Unit)?
 ) {
     val displayedSerialNumbers = availableSerialNumbers(serialNumbers).map { (index, serialNumber) ->
         when (LocalDesignSystem.current) {

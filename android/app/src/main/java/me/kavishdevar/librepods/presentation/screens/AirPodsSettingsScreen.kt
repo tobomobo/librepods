@@ -583,7 +583,9 @@ fun AirPodsSettingsScreen(
                     deviceColor = state.deviceColor,
                     serialNumbers = state.serialNumbers,
                     version = state.version3,
-                    navigateToVersion = navigateToVersion
+                    navigateToVersion = if (state.instance?.model?.caseRes != null) {
+                        navigateToVersion
+                    } else null
                 )
             }
 
