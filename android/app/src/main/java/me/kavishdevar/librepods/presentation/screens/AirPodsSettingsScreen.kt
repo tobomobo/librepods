@@ -577,13 +577,14 @@ fun AirPodsSettingsScreen(
 
             item(key = "spacer_about") { Spacer(modifier = Modifier.height(32.dp)) }
             item(key = "about") {
+                val hasCase = state.instance?.model?.caseRes != null
                 AboutCard(
                     modelName = state.modelName,
                     actualModel = state.actualModel,
                     deviceColor = state.deviceColor,
                     serialNumbers = state.serialNumbers,
-                    version = state.version3,
-                    navigateToVersion = if (state.instance?.model?.caseRes != null) {
+                    version = if (hasCase) state.version3 else state.version1,
+                    navigateToVersion = if (hasCase) {
                         navigateToVersion
                     } else null
                 )
