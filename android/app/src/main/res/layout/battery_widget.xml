@@ -60,6 +60,7 @@
                     android:tint="@color/white"
                     tools:ignore="HardcodedText" />
                 <ImageView
+                    android:id="@+id/left_battery_widget_icon"
                     android:layout_width="28dp"
                     android:layout_height="28dp"
                     android:src="@drawable/smartphone"

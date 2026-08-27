@@ -1931,6 +1931,11 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
 
             it.setViewVisibility(R.id.right_battery_widget_container, headsetVisibility)
             it.setViewVisibility(R.id.case_battery_widget_container, headsetVisibility)
+            it.setImageViewResource(
+                R.id.left_battery_widget_icon,
+                if (headsetBattery == null) R.drawable.airpods_pro_left_notification
+                else airpodsInstance?.model?.budsRes ?: R.drawable.airpods_max
+            )
 
             it.setTextViewText(R.id.left_battery_widget, leftBattery?.let {
                 "${it.level}%"

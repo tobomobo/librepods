@@ -5,4 +5,5 @@
     <string name="show_island_popup">Dynamic Island Popup</string>
     <string name="show_island_popup_description">Zeigt das Popup im Dynamic-Island-Stil oben für Verbindungs- und Übergabe-Ereignisse.</string>
     <string name="device_color">Farbe</string>
+    <string name="head_detection">Automatische Kopferkennung</string>
 </resources>
