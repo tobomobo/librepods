@@ -50,6 +50,7 @@ import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -165,7 +166,15 @@ class IslandWindow(private val context: Context) {
     @SuppressLint("SetTextI18s", "ClickableViewAccessibility", "UnspecifiedRegisterReceiverFlag",
         "SetTextI18n"
     )
-    fun show(name: String, batteryPercentage: Int, context: Context, type: IslandType = IslandType.CONNECTED, reversed: Boolean = false, otherDeviceName: String? = null) {
+    fun show(
+        name: String,
+        batteryPercentage: Int,
+        context: Context,
+        type: IslandType = IslandType.CONNECTED,
+        reversed: Boolean = false,
+        otherDeviceName: String? = null,
+        artworkRes: Int? = null
+    ) {
         if (ServiceManager.getService()?.islandOpen == true) return
         else ServiceManager.getService()?.islandOpen = true
 
@@ -374,12 +383,21 @@ class IslandWindow(private val context: Context) {
         }
 
         val videoView = islandView.findViewById<VideoView>(R.id.island_video_view)
-        val videoUri = "android.resource://me.kavishdevar.librepods/${R.raw.island}".toUri()
-        videoView.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE)
-        videoView.setVideoURI(videoUri)
-        videoView.setOnPreparedListener { mediaPlayer ->
-            mediaPlayer.isLooping = true
-            videoView.start()
+        val artworkView = islandView.findViewById<ImageView>(R.id.island_artwork_view)
+        if (artworkRes != null) {
+            videoView.visibility = View.GONE
+            artworkView.setImageResource(artworkRes)
+            artworkView.visibility = View.VISIBLE
+        } else {
+            artworkView.visibility = View.GONE
+            videoView.visibility = View.VISIBLE
+            val videoUri = "android.resource://${context.packageName}/${R.raw.island}".toUri()
+            videoView.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE)
+            videoView.setVideoURI(videoUri)
+            videoView.setOnPreparedListener { mediaPlayer ->
+                mediaPlayer.isLooping = true
+                videoView.start()
+            }
         }
 
         try {
@@ -605,6 +623,7 @@ class IslandWindow(private val context: Context) {
 
             if (progress < 0.7f) {
                 islandView.findViewById<VideoView>(R.id.island_video_view).visibility = View.GONE
+                islandView.findViewById<ImageView>(R.id.island_artwork_view).visibility = View.GONE
             }
         }
         normalizeAnimator.addListener(object : AnimatorListenerAdapter() {
