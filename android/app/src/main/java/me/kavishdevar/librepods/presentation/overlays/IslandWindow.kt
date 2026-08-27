@@ -130,6 +130,16 @@ class IslandWindow(private val context: Context) {
     val isVisible: Boolean
         get() = containerView.parent != null && containerView.visibility == View.VISIBLE
 
+    fun updateArtwork(artworkRes: Int) {
+        islandView.post {
+            islandView.findViewById<VideoView>(R.id.island_video_view).visibility = View.GONE
+            islandView.findViewById<ImageView>(R.id.island_artwork_view).apply {
+                setImageResource(artworkRes)
+                visibility = View.VISIBLE
+            }
+        }
+    }
+
     @SuppressLint("SetTextI18n")
     private fun updateBatteryDisplay(batteryList: ArrayList<Battery>?) {
         if (batteryList == null || batteryList.isEmpty()) return

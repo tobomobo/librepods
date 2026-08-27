@@ -270,11 +270,29 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         return true
     }
 
+    private fun maxArtworkRes(): Int? = airpodsInstance?.model?.takeIf { it.caseRes == null }?.let {
+        val color = bleManager.getMostRecentStatus("AirPods Max")?.color
+            ?.takeUnless { it.startsWith("Unknown") }
+            ?: sharedPreferences.getString("airpods_max_color", null)
+        airPodsMaxArtworkRes(color, it.budCaseRes)
+    }
+
+    private fun updateMaxArtwork(device: BLEManager.AirPodsStatus) {
+        if (!device.model.startsWith("AirPods Max")) return
+        if (!device.color.startsWith("Unknown")) {
+            sharedPreferences.edit { putString("airpods_max_color", device.color) }
+        }
+        maxArtworkRes()?.let { artwork ->
+            islandWindow?.takeIf { it.isVisible }?.updateArtwork(artwork)
+        }
+    }
+
     private val bleStatusListener = object : BLEManager.AirPodsStatusListener {
         @SuppressLint("NewApi")
         override fun onDeviceStatusChanged(
             device: BLEManager.AirPodsStatus, previousStatus: BLEManager.AirPodsStatus?
         ) {
+            updateMaxArtwork(device)
             if (device.connectionState == "Disconnected" && BluetoothConnectionManager.aacpSocket?.isConnected != true) { // should never happen unless android messes up and sends us a stale broadcast
                 Log.d(TAG, "Seems no device has taken over, we will.")
                 val bluetoothManager = getSystemService(BluetoothManager::class.java)
@@ -294,6 +312,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         }
 
         override fun onBroadcastFromNewAddress(device: BLEManager.AirPodsStatus) {
+            updateMaxArtwork(device)
             Log.d(TAG, "New address detected")
             if (BluetoothConnectionManager.aacpSocket?.isConnected == true) {
                 sendBatteryBroadcast()
@@ -1663,10 +1682,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
             return
         }
         val popupWindow = PopupWindow(service.applicationContext) { popupShown = false }
-        val artworkRes = airpodsInstance?.model?.takeIf { it.caseRes == null }?.let {
-            airPodsMaxArtworkRes(bleManager.getMostRecentStatus("AirPods Max")?.color, it.budCaseRes)
-        }
-        popupWindow.open(name, batteryNotification, artworkRes)
+        popupWindow.open(name, batteryNotification, maxArtworkRes())
         popupShown = true
     }
 
@@ -1690,10 +1706,8 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
             return
         }
         CoroutineScope(Dispatchers.Main).launch {
+            if (islandOpen) return@launch
             islandWindow = IslandWindow(service.applicationContext)
-            val artworkRes = airpodsInstance?.model?.takeIf { it.caseRes == null }?.let {
-                airPodsMaxArtworkRes(bleManager.getMostRecentStatus("AirPods Max")?.color, it.budCaseRes)
-            }
             islandWindow!!.show(
                 sharedPreferences.getString("name", "AirPods Pro").toString(),
                 batteryPercentage,
@@ -1701,7 +1715,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                 type,
                 reversed,
                 otherDeviceName,
-                artworkRes
+                maxArtworkRes()
             )
         }
     }
@@ -2341,10 +2355,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                 val caseRes = instance.model.caseRes
                 val isHeadset = caseRes == null
                 val mainIcon = if (isHeadset) {
-                    airPodsMaxArtworkRes(
-                        bleManager.getMostRecentStatus("AirPods Max")?.color,
-                        instance.model.budCaseRes
-                    )
+                    maxArtworkRes() ?: instance.model.budCaseRes
                 } else {
                     instance.model.budCaseRes
                 }
