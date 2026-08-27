@@ -1691,13 +1691,17 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         }
         CoroutineScope(Dispatchers.Main).launch {
             islandWindow = IslandWindow(service.applicationContext)
+            val artworkRes = airpodsInstance?.model?.takeIf { it.caseRes == null }?.let {
+                airPodsMaxArtworkRes(bleManager.getMostRecentStatus("AirPods Max")?.color, it.budCaseRes)
+            }
             islandWindow!!.show(
                 sharedPreferences.getString("name", "AirPods Pro").toString(),
                 batteryPercentage,
                 this@AirPodsService,
                 type,
                 reversed,
-                otherDeviceName
+                otherDeviceName,
+                artworkRes
             )
         }
     }
