@@ -152,7 +152,7 @@ class PopupWindow(
                     artwork.visibility = View.GONE
                     vid.visibility = View.VISIBLE
                     vid.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE)
-                    vid.setVideoPath("android.resource://me.kavishdevar.librepods/" + R.raw.connected)
+                    vid.setVideoPath("android.resource://${context.packageName}/${R.raw.connected}")
                     vid.resolveAdjustedSize(vid.width, vid.height)
                     vid.start()
                     vid.setOnCompletionListener { vid.start() }
@@ -230,13 +230,18 @@ class PopupWindow(
         val batteryLeftText = mView.findViewById<TextView>(R.id.left_battery)
         val batteryRightText = mView.findViewById<TextView>(R.id.right_battery)
         val batteryCaseText = mView.findViewById<TextView>(R.id.case_battery)
+        val batteryComponents = mView.findViewById<LinearLayout>(R.id.battery_components)
+        val headsetBatteryText = mView.findViewById<TextView>(R.id.headset_battery)
 
         batteryList.find { it.component == BatteryComponent.HEADSET }?.let {
-            batteryLeftText.text = ""
-            batteryRightText.text = if (it.status != BatteryStatus.DISCONNECTED) "${it.level}%" else ""
-            batteryCaseText.text = ""
+            batteryComponents.visibility = View.GONE
+            headsetBatteryText.visibility = View.VISIBLE
+            headsetBatteryText.text = if (it.status != BatteryStatus.DISCONNECTED) "${it.level}%" else ""
             return
         }
+
+        headsetBatteryText.visibility = View.GONE
+        batteryComponents.visibility = View.VISIBLE
 
         batteryLeftText.text = batteryList.find { it.component == BatteryComponent.LEFT }?.let {
             if (it.status != BatteryStatus.DISCONNECTED) {

@@ -3,11 +3,18 @@ package me.kavishdevar.librepods
 import me.kavishdevar.librepods.bluetooth.AACPManager
 import me.kavishdevar.librepods.bluetooth.AACPManager.Companion.ControlCommandIdentifiers
 import me.kavishdevar.librepods.bluetooth.BLEManager
+import me.kavishdevar.librepods.data.AirPodsMax1
+import me.kavishdevar.librepods.data.AirPodsMax2
+import me.kavishdevar.librepods.data.AirPodsModels
+import me.kavishdevar.librepods.data.Capability
 import me.kavishdevar.librepods.data.airPodsMaxArtworkRes
 import me.kavishdevar.librepods.presentation.components.availableSerialNumbers
 import me.kavishdevar.librepods.services.matchesBleBatteryModel
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AirPodsStateTest {
@@ -48,7 +55,7 @@ class AirPodsStateTest {
     }
 
     @Test
-    fun usesExactAirPodsMaxArtwork() {
+    fun usesMappedAirPodsMaxArtwork() {
         assertEquals(R.drawable.airpods_max, airPodsMaxArtworkRes("Silver", 0))
         assertEquals(R.drawable.airpods_max_spacegray, airPodsMaxArtworkRes("Midnight", 0))
         assertEquals(R.drawable.airpods_max_spacegray, airPodsMaxArtworkRes("Space Gray", 0))
@@ -56,6 +63,32 @@ class AirPodsStateTest {
         assertEquals(R.drawable.airpods_max_pink, airPodsMaxArtworkRes("Pink", 0))
         assertEquals(R.drawable.airpods_max_green, airPodsMaxArtworkRes("Green", 0))
         assertEquals(123, airPodsMaxArtworkRes(null, 123))
+    }
+
+    @Test
+    fun resolvesAirPodsMaxModelsAndCapabilities() {
+        val lightning = AirPodsModels.getModelByModelNumber("A2096")
+        val usbC = AirPodsModels.getModelByModelNumber("A3184")
+        val max2 = AirPodsModels.getModelByModelNumber("A3454")
+
+        assertTrue(lightning is AirPodsMax1)
+        assertSame(lightning, usbC)
+        assertNull(lightning?.caseRes)
+        assertEquals(setOf(Capability.LISTENING_MODE), lightning?.capabilities)
+
+        assertTrue(max2 is AirPodsMax2)
+        assertNull(max2?.caseRes)
+        assertEquals(
+            setOf(
+                Capability.LISTENING_MODE,
+                Capability.CONVERSATION_AWARENESS,
+                Capability.HEAD_GESTURES,
+                Capability.LOUD_SOUND_REDUCTION,
+                Capability.ADAPTIVE_AUDIO,
+                Capability.ADAPTIVE_VOLUME
+            ),
+            max2?.capabilities
+        )
     }
 
     @Test

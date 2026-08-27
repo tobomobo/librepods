@@ -495,6 +495,7 @@ fun AirPodsSettingsScreen(
             item(key = "spacer_connection") { Spacer(modifier = Modifier.height(16.dp)) }
             item(key = "connection") {
                 ConnectionSettings(
+                    headDetection = state.instance?.model?.caseRes == null,
                     automaticEarDetectionEnabled = state.automaticEarDetectionEnabled,
                     onAutomaticEarDetectionChanged = onAutomaticEarDetectionChanged,
                     automaticConnectionEnabled = state.automaticConnectionEnabled,

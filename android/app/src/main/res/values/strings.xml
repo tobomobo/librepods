@@ -58,6 +58,7 @@
     <string name="more_settings_title">Open AirPods Settings</string>
     <string name="more_settings_subtitle">Manage AirPods features and preferences</string>
     <string name="ear_detection">Automatic Ear Detection</string>
+    <string name="head_detection">Automatic Head Detection</string>
     <string name="auto_play">Auto Play</string>
     <string name="auto_pause">Auto Pause</string>
     <string name="troubleshooting">Troubleshooting</string>

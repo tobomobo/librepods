@@ -27,6 +27,7 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 
 @Composable
 fun ConnectionSettings(
+    headDetection: Boolean,
     automaticEarDetectionEnabled: Boolean,
     onAutomaticEarDetectionChanged: (Boolean) -> Unit,
     automaticConnectionEnabled: Boolean,
@@ -34,7 +35,7 @@ fun ConnectionSettings(
 ) {
     StyledList {
         StyledToggle(
-            label = stringResource(R.string.ear_detection),
+            label = stringResource(if (headDetection) R.string.head_detection else R.string.ear_detection),
             checked = automaticEarDetectionEnabled,
             onCheckedChange = onAutomaticEarDetectionChanged
         )

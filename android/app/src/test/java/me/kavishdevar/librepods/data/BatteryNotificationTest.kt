@@ -26,10 +26,11 @@ class BatteryNotificationTest {
     }
 
     @Test
-    fun parsesSingleHeadsetBattery() {
+    fun parsesCapturedSingleHeadsetBattery() {
+        // Captured from AirPods Max: https://github.com/librepods-org/librepods/issues/30#issuecomment-3540231232
         val packet = byteArrayOf(
             0x04, 0x00, 0x04, 0x00, 0x04, 0x00, 0x01,
-            0x01, 0x01, 83, 0x02, 0x01
+            0x01, 0x01, 100, 0x02, 0x01
         )
         val notification = AirPodsNotifications.BatteryNotification()
 
@@ -37,11 +38,11 @@ class BatteryNotificationTest {
         notification.setBattery(packet)
 
         val batteries = notification.getBattery()
-        assertEquals(83, batteries[0].level)
-        assertEquals(83, batteries[1].level)
+        assertEquals(100, batteries[0].level)
+        assertEquals(100, batteries[1].level)
         assertEquals(BatteryStatus.DISCONNECTED, batteries[2].status)
         assertEquals(BatteryComponent.HEADSET, batteries[3].component)
-        assertEquals("83%", batteryNotificationText(batteries))
+        assertEquals("100%", batteryNotificationText(batteries))
     }
 
     @Test
