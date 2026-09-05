@@ -1246,7 +1246,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         var justEnabledA2dp = false
         earDetectionNotification.setStatus(earDetection)
         val audioConnected = getSystemService(AudioManager::class.java)
-            .getDevices(AudioManager.GET_DEVICES_OUTPUT).any {
+            .getDevices(AudioManager.GET_DEVICES_OUTPUTS).any {
                 it.type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP &&
                     it.address.equals(macAddress, ignoreCase = true)
             }
