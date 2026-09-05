@@ -744,7 +744,7 @@ fun AirPodsSettingsScreen(
 
                             val animatedShapeColor by animateColorAsState(if (reconnecting) primaryContainerColor else secondaryContainerColor)
 
-                            if (state.connectionSuccessful) {
+                            if (state.hasSavedDevice) {
                                 Box(
                                     modifier = Modifier
                                         .size(240.dp)
@@ -844,15 +844,15 @@ fun AirPodsSettingsScreen(
                                     style = MaterialTheme.typography.headlineMedium,
                                     color = MaterialTheme.colorScheme.primary
                                 )
-                                if (sharedPreferences.getBoolean("bypass_device_check.v2", false)) {
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    Text(
-                                        text = stringResource(R.string.compatibility_check_bypassed),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
+                            }
+                            if (!state.connectionSuccessful && sharedPreferences.getBoolean("bypass_device_check.v2", false)) {
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = stringResource(R.string.compatibility_check_bypassed),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center
+                                )
                             }
                         }
 
@@ -915,7 +915,7 @@ fun AirPodsSettingsScreen(
                             )
                         }
 
-                        if (state.connectionSuccessful) {
+                        if (state.hasSavedDevice) {
                             StyledButton(
                                 onClick = { reconnectFromSavedMac(); reconnecting = true },
                                 backdrop = backdrop,

@@ -100,6 +100,7 @@ data class AirPodsUiState(
     val dynamicEndOfCharge: Boolean = false,
 
     val connectionSuccessful: Boolean = false,
+    val hasSavedDevice: Boolean = false,
     val timeUntilFOSSPremiumExpiry: Long = 0L,
 
     val customEq: CustomEq = CustomEq(1, 50, 50, 50) // disabled
@@ -231,6 +232,7 @@ class AirPodsViewModel(
     private val xposedRemotePref = XposedRemotePrefProvider.create()
 
     private lateinit var broadcastReceiver: BroadcastReceiver
+    private var preferenceListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
 //    private val _cameraAction = MutableStateFlow(
 //        sharedPreferences.getString("camera_action", null)
@@ -274,6 +276,8 @@ class AirPodsViewModel(
         }
         service.aacpManager.customEqCallback = null
         appContext.unregisterReceiver(broadcastReceiver)
+        preferenceListener?.let(sharedPreferences::unregisterOnSharedPreferenceChangeListener)
+        preferenceListener = null
     }
 
     private fun loadName() {
@@ -311,9 +315,11 @@ class AirPodsViewModel(
                 "name" -> loadName()
                 "off_listening_mode", "automatic_ear_detection", "automatic_connection_ctrl_cmd",
                 "head_gestures", "left_long_press_action", "right_long_press_action",
-                "dynamic_end_of_charge", "foss_upgraded", "premium_expiry_time" -> loadSharedPreferences()
+                "dynamic_end_of_charge", "foss_upgraded", "premium_expiry_time",
+                "mac_address", "connection_successful" -> loadSharedPreferences()
             }
         }
+        preferenceListener = listener
         sharedPreferences.registerOnSharedPreferenceChangeListener(listener)
     }
 
@@ -511,6 +517,7 @@ class AirPodsViewModel(
                 vendorIdHook = vendorIdHook,
                 dynamicEndOfCharge = dynamicEndOfCharge,
                 connectionSuccessful = connectionSuccessful,
+                hasSavedDevice = !sharedPreferences.getString("mac_address", null).isNullOrBlank(),
             )
         }
 

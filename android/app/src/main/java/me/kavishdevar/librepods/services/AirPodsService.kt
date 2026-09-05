@@ -2131,6 +2131,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         )
 
         if (BluetoothConnectionManager.aacpSocket == null) {
+            notificationManager.cancel(2)
             return
         }
         if (BluetoothConnectionManager.aacpSocket?.isConnected == true) {
@@ -2860,6 +2861,15 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         }
     }
 
+    // Called while holding aacpSessionLock so the event identifies the disconnected generation.
+    private fun publishAacpDisconnected() {
+        updateNotificationContent(false)
+        sendBroadcast(Intent(AirPodsNotifications.AIRPODS_DISCONNECTED).apply {
+            putExtra("aacp_generation", aacpSessionGeneration)
+            setPackage(packageName)
+        })
+    }
+
     private fun invalidateAacpSession(expectedGeneration: Long? = null): Boolean {
         var sockets: List<BluetoothSocket> = emptyList()
         var readerJob: Job? = null
@@ -2887,6 +2897,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                 BluetoothConnectionManager.aacpSocket = null
                 BluetoothConnectionManager.attSocket = null
                 aacpManager.disconnected()
+                publishAacpDisconnected()
                 true
             }
         }
@@ -2924,11 +2935,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                 BluetoothConnectionManager.aacpSocket = null
                 BluetoothConnectionManager.attSocket = null
                 aacpManager.disconnected()
-                updateNotificationContent(false)
-                sendBroadcast(Intent(AirPodsNotifications.AIRPODS_DISCONNECTED).apply {
-                    putExtra("aacp_generation", aacpSessionGeneration)
-                    setPackage(packageName)
-                })
+                publishAacpDisconnected()
                 true
             }
         }
@@ -3274,11 +3281,6 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         if (!hasSession) return
         invalidateAacpSession()
 
-        updateNotificationContent(false)
-        sendBroadcast(Intent(AirPodsNotifications.AIRPODS_DISCONNECTED).apply {
-            putExtra("aacp_generation", aacpSessionGeneration)
-            setPackage(packageName)
-        })
 
         val bluetoothAdapter = getSystemService(BluetoothManager::class.java).adapter
         if (checkSelfPermission("android.permission.BLUETOOTH_PRIVILEGED") == PackageManager.PERMISSION_GRANTED){
