@@ -152,6 +152,10 @@ class PopupWindow(
                     artwork.visibility = View.GONE
                     vid.visibility = View.VISIBLE
                     vid.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE)
+                    vid.setOnErrorListener { _, what, extra ->
+                        Log.e("PopupWindow", "Error playing popup video: what=$what extra=$extra")
+                        true
+                    }
                     vid.setVideoPath("android.resource://${context.packageName}/${R.raw.connected}")
                     vid.resolveAdjustedSize(vid.width, vid.height)
                     vid.start()

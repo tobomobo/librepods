@@ -403,6 +403,10 @@ class IslandWindow(private val context: Context) {
             videoView.visibility = View.VISIBLE
             val videoUri = "android.resource://${context.packageName}/${R.raw.island}".toUri()
             videoView.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE)
+            videoView.setOnErrorListener { _, what, extra ->
+                e("IslandWindow", "Error playing island video: what=$what extra=$extra")
+                true
+            }
             videoView.setVideoURI(videoUri)
             videoView.setOnPreparedListener { mediaPlayer ->
                 mediaPlayer.isLooping = true
