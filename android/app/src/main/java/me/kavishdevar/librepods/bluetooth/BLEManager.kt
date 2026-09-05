@@ -61,7 +61,9 @@ class BLEManager(private val context: Context) {
         val connectionState: String = "Unknown"
     )
 
+    @Synchronized
     fun getMostRecentStatus(modelPrefix: String? = null): AirPodsStatus? {
+        refreshIdentity()
         return if (modelPrefix == null) {
             deviceStatusMap.values.maxByOrNull { it.lastSeen }
         } else {
@@ -82,14 +84,14 @@ class BLEManager(private val context: Context) {
     private var mBluetoothLeScanner: BluetoothLeScanner? = null
     private var mScanCallback: ScanCallback? = null
     private var airPodsStatusListener: AirPodsStatusListener? = null
-    private val deviceStatusMap = mutableMapOf<String, AirPodsStatus>()
-    private val verifiedAddresses = mutableSetOf<String>()
+    private val sessionCache = BleSessionCache<AirPodsStatus>()
+    private val deviceStatusMap get() = sessionCache.statuses
     private val sharedPreferences: SharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     private var currentGlobalLidState: Boolean? = null
     private var lastBroadcastTime: Long = 0
-    private val processedAddresses = mutableSetOf<String>()
+    private val processedAddresses get() = sessionCache.processedAddresses
 
-    private val lastValidCaseBatteryMap = mutableMapOf<String, Int>()
+    private val lastValidCaseBatteryMap get() = sessionCache.caseBatteries
     private val singleBatteryModelIds = setOf(0x0A20, 0x1F20, 0x2D20)
     private val modelNames = mapOf(
         0x0E20 to "AirPods Pro",
@@ -175,7 +177,7 @@ class BLEManager(private val context: Context) {
                 }
 
                 override fun onBatchScanResults(results: List<ScanResult>) {
-                    processedAddresses.clear()
+                    synchronized(this@BLEManager) { processedAddresses.clear() }
                     for (result in results) {
                         processScanResult(result)
                     }
@@ -210,9 +212,23 @@ class BLEManager(private val context: Context) {
         }
     }
 
+    private var identityPreferences: Map<String, *> = emptyMap<String, Any>()
+
+    private fun refreshIdentity() {
+        identityPreferences = sharedPreferences.all
+        if (sessionCache.select(
+                identityPreferences["mac_address"] as? String,
+                identityPreferences["IRK"] as? String,
+                identityPreferences["ENC_KEY"] as? String
+            )) {
+            currentGlobalLidState = null
+            lastBroadcastTime = 0
+        }
+    }
+
     @OptIn(ExperimentalEncodingApi::class)
     private fun getEncryptionKeyFromPreferences(): ByteArray? {
-        val keyBase64 = sharedPreferences.getString(AACPManager.Companion.ProximityKeyType.ENC_KEY.name, null)
+        val keyBase64 = identityPreferences[AACPManager.Companion.ProximityKeyType.ENC_KEY.name] as? String
         return if (keyBase64 != null) {
             try {
                 Base64.decode(keyBase64)
@@ -249,8 +265,10 @@ class BLEManager(private val context: Context) {
         return Pair(charging, level)
     }
 
+    @Synchronized
     private fun processScanResult(result: ScanResult) {
         try {
+            refreshIdentity()
             val scanRecord = result.scanRecord ?: return
             val address = result.device.address
 
@@ -261,14 +279,9 @@ class BLEManager(private val context: Context) {
             val manufacturerData = scanRecord.getManufacturerSpecificData(76) ?: return
             if (manufacturerData.size <= 20) return
 
-            if (!verifiedAddresses.contains(address)) {
-                val irk = getIrkFromPreferences()
-                if (irk == null || !BluetoothCryptography.verifyRPA(address, irk)) {
-                    return
-                }
-                verifiedAddresses.add(address)
-                Log.d(TAG, "RPA verified and added to trusted list: $address")
-            }
+            // Re-verify each batch: an address trusted under a previous headset's IRK is not trusted now.
+            val irk = getIrkFromPreferences() ?: return
+            if (!BluetoothCryptography.verifyRPA(address, irk)) return
 
             processedAddresses.add(address)
             lastBroadcastTime = System.currentTimeMillis()
@@ -398,7 +411,9 @@ class BLEManager(private val context: Context) {
         )
     }
 
+    @Synchronized
     private fun cleanupStaleDevices() {
+        refreshIdentity()
         val now = System.currentTimeMillis()
         val staleCutoff = now - STALE_DEVICE_TIMEOUT_MS
         val hadDevices = deviceStatusMap.isNotEmpty()
@@ -415,7 +430,9 @@ class BLEManager(private val context: Context) {
         }
     }
 
+    @Synchronized
     private fun checkLidStateTimeout() {
+        refreshIdentity()
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastBroadcastTime > LID_CLOSE_TIMEOUT_MS && currentGlobalLidState == true) {
             Log.d(TAG, "No broadcasts for ${LID_CLOSE_TIMEOUT_MS}ms, forcing lid state to closed")
@@ -426,7 +443,7 @@ class BLEManager(private val context: Context) {
 
     @OptIn(ExperimentalEncodingApi::class)
     private fun getIrkFromPreferences(): ByteArray? {
-        val irkBase64 = sharedPreferences.getString(AACPManager.Companion.ProximityKeyType.IRK.name, null)
+        val irkBase64 = identityPreferences[AACPManager.Companion.ProximityKeyType.IRK.name] as? String
         return if (irkBase64 != null) {
             try {
                 Base64.decode(irkBase64)

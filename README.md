@@ -120,6 +120,7 @@ These parts of the app were completely AI-generated:
 - The offset setup with r2+the xposed module (both versions)
 - Troubleshooter and LogCollector
 - AirPods Max 1/2 Android support and its regression tests (OpenAI Codex, hardware-tested by @tobomobo)
+- Fork reconnect/session and per-headset BLE identity fixes (OpenAI Codex); reconnect work incorporates upstream PR #691, and Max notification icons come from @Spottq in upstream PR #767.
 
 Other than the items listed above, the background service, Bluetooth manager classes (AACP and ATT), UI, and its components were written manually.
 

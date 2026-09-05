@@ -148,9 +148,9 @@ jobs:
       - id: changelog
         run: |
           if [ -z "${{ steps.prev.outputs.tag }}" ]; then
-            NOTES=$(git log --pretty=format:"- %s ([%h](https://github.com/kavishdevar/librepods/commit/%H))")
+            NOTES=$(git log --pretty=format:"- %s ([%h](https://github.com/${{ github.repository }}/commit/%H))")
           else
-            NOTES=$(git log ${{ steps.prev.outputs.tag }}..HEAD --pretty=format:"- %s ([%h](https://github.com/kavishdevar/librepods/commit/%H))")
+            NOTES=$(git log ${{ steps.prev.outputs.tag }}..HEAD --pretty=format:"- %s ([%h](https://github.com/${{ github.repository }}/commit/%H))")
           fi
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$NOTES" >> $GITHUB_OUTPUT
@@ -171,6 +171,7 @@ jobs:
         id: timestamp
         run: echo "timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
       - name: Post to Discord
+        if: github.repository == 'librepods-org/librepods'
         run: |
           curl -X POST "${{ secrets.DISCORD_ANDROID_CI_URL }}?with_components=true" \
             -H "Content-Type: application/json" \

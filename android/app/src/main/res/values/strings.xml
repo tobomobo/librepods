@@ -87,7 +87,7 @@
     <string name="loud_sound_reduction">Loud Sound Reduction</string>
     <string name="call_controls">Call Controls</string>
     <string name="automatically_connect">Connect to this device automatically</string>
-    <string name="automatically_connect_description">When enabled, AirPods will try to connect to this device automatically. Else, they will try to autoconnect only when last connected.</string>
+    <string name="automatically_connect_description">When enabled, LibrePods can reconnect audio automatically. When disabled, use Bluetooth settings or Reconnect to connect manually. AirPods may still reconnect through Android when this was their last connected device.</string>
     <string name="sleep_detection">Pause media when falling asleep</string>
     <string name="off_listening_mode">Off Listening Mode</string>
     <string name="off_listening_mode_description">When this is on, AirPods listening modes will include an Off option. Loud sound levels are not reduced when the listening mode is set to Off.</string>
