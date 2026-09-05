@@ -10,3 +10,11 @@ internal fun mayAutomaticallyConnect(
 
 internal fun isDeviceIdentityPreference(key: String): Boolean =
     key == "name" || key == "IRK" || key == "ENC_KEY" || key.startsWith("airpods_")
+
+internal fun mayHandleEarPlayback(
+    selectedAddress: String,
+    manuallyDisconnectedAddress: String?,
+    automaticConnectionAllowed: Boolean,
+    audioConnected: Boolean
+): Boolean = selectedAddress.isNotEmpty() && selectedAddress != manuallyDisconnectedAddress &&
+    (automaticConnectionAllowed || audioConnected)

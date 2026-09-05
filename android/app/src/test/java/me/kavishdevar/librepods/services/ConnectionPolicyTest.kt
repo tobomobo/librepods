@@ -31,4 +31,9 @@ class ConnectionPolicyTest {
             assertFalse(key, isDeviceIdentityPreference(key))
         }
     }
+    @Test fun earDetectionCannotStartPlaybackThroughSpeakersWhenAutoconnectIsOff() {
+        assertFalse(mayHandleEarPlayback("max", null, false, false))
+        assertTrue(mayHandleEarPlayback("max", null, false, true))
+        assertFalse(mayHandleEarPlayback("max", "max", true, true))
+    }
 }

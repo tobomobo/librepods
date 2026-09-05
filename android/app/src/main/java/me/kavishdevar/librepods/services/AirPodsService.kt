@@ -185,6 +185,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
     private var aacpReaderJob: Job? = null
     private var aacpInitializationJob: Job? = null
     private var readyAacpSessionGeneration: Long? = null
+    private var a2dpPlaybackReceiver: BroadcastReceiver? = null
 
     data class ServiceConfig(
         var deviceName: String = "AirPods",
@@ -741,7 +742,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(connectionReceiver, deviceIntentFilter, RECEIVER_EXPORTED)
+            registerReceiver(connectionReceiver, deviceIntentFilter, RECEIVER_NOT_EXPORTED)
             registerReceiver(bluetoothReceiver, serviceIntentFilter, RECEIVER_EXPORTED)
         } else {
             @Suppress("UnspecifiedRegisterReceiverFlag") registerReceiver(
@@ -1244,6 +1245,17 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         )
         var justEnabledA2dp = false
         earDetectionNotification.setStatus(earDetection)
+        val audioConnected = getSystemService(AudioManager::class.java)
+            .getDevices(AudioManager.GET_DEVICES_OUTPUT).any {
+                it.type == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP &&
+                    it.address.equals(macAddress, ignoreCase = true)
+            }
+        if (!mayHandleEarPlayback(
+                macAddress,
+                sharedPreferences.getString("manually_disconnected_device", null),
+                appMayConnectAudio(macAddress),
+                audioConnected
+            )) return
         if (config.earDetectionEnabled) {
             val data = earDetection.copyOfRange(earDetection.size - 2, earDetection.size)
             inEar = data[0] == 0x00.toByte() && data[1] == 0x00.toByte()
@@ -1271,13 +1283,16 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
             }
 
             if (newInEarData.contains(true) && inEarData == listOf(false, false)) {
-                connectAudio(this@AirPodsService, device)
-                justEnabledA2dp = true
-                registerA2dpConnectionReceiver()
+                if (appMayConnectAudio(macAddress)) {
+                    registerA2dpConnectionReceiver()
+                    connectAudio(this@AirPodsService, device)
+                    justEnabledA2dp = true
+                }
                 if (MediaController.getMusicActive()) {
                     MediaController.userPlayedTheMedia = true
                 }
             } else if (newInEarData == listOf(false, false)) {
+                clearPendingPlayback()
                 MediaController.sendPause(force = true)
                 if (config.disconnectWhenNotWearing) {
                     disconnectAudio(this@AirPodsService, device)
@@ -1320,9 +1335,23 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
         }
     }
 
+    private fun clearPendingPlayback() {
+        a2dpPlaybackReceiver?.let { runCatching { unregisterReceiver(it) } }
+        a2dpPlaybackReceiver = null
+    }
+
     private fun registerA2dpConnectionReceiver() {
+        clearPendingPlayback()
+        val targetAddress = device?.address ?: return
+        val generation = synchronized(aacpSessionLock) { aacpSessionGeneration }
         val a2dpConnectionStateReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
+                if (a2dpPlaybackReceiver !== this) return
+                if (!isCurrentAacpSession(generation) || targetAddress != macAddress ||
+                    !appMayConnectAudio(targetAddress)) {
+                    clearPendingPlayback()
+                    return
+                }
                 if (intent.action == "android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED") {
                     val state = intent.getIntExtra(
                         BluetoothProfile.EXTRA_STATE, BluetoothProfile.STATE_DISCONNECTED
@@ -1338,18 +1367,19 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                         "A2DP state changed: $previousState -> $state for device: ${device?.address}"
                     )
 
-                    if (state == BluetoothProfile.STATE_CONNECTED && previousState != BluetoothProfile.STATE_CONNECTED && device?.address == this@AirPodsService.device?.address) {
+                    if (state == BluetoothProfile.STATE_CONNECTED && previousState != BluetoothProfile.STATE_CONNECTED && device?.address == targetAddress) {
 
                         Log.d("MediaController", "A2DP connected, sending play command")
                         MediaController.sendPlay()
                         MediaController.iPausedTheMedia = false
 
-                        context.unregisterReceiver(this)
+                        clearPendingPlayback()
                     }
                 }
             }
         }
 
+        a2dpPlaybackReceiver = a2dpConnectionStateReceiver
         val a2dpIntentFilter =
             IntentFilter("android.bluetooth.a2dp.profile.action.CONNECTION_STATE_CHANGED")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -2754,6 +2784,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
             connectionAttemptInProgress = true
             aacpSessionGeneration += 1
             readyAacpSessionGeneration = null
+            clearPendingPlayback()
             aacpInitializationJob?.cancel()
             aacpInitializationJob = null
             aacpReaderJob?.cancel()
@@ -2842,6 +2873,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                 aacpSessionGeneration += 1
                 connectionAttemptInProgress = false
                 readyAacpSessionGeneration = null
+                clearPendingPlayback()
                 readerJob = aacpReaderJob
                 initializationJob = aacpInitializationJob
                 sockets = listOfNotNull(
@@ -2881,6 +2913,7 @@ class AirPodsService : Service(), SharedPreferences.OnSharedPreferenceChangeList
                 aacpSessionGeneration += 1
                 connectionAttemptInProgress = false
                 readyAacpSessionGeneration = null
+                clearPendingPlayback()
                 initializationJob = aacpInitializationJob
                 sockets = listOfNotNull(
                     socket,
